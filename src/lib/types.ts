@@ -10,6 +10,13 @@ export const QuadrantLabels: Record<Quadrant, string> = {
   Vocation: '使命',
 };
 
+export const QuadrantLabelsEn: Record<Quadrant, string> = {
+  Mind: 'Mind',
+  Body: 'Body',
+  Spirit: 'Spirit',
+  Vocation: 'Vocation',
+};
+
 export const QuadrantDescriptions: Record<Quadrant, string> = {
   Mind: '个人心理世界 - 思想、情感、信念、世界观',
   Body: '个人物理世界 - 健康、体能、营养、精力',
@@ -25,6 +32,12 @@ export const LevelLabels: Record<Level, string> = {
   Conformist: '从众者 (1.0)',
   Individualist: '个体者 (2.0)',
   Synthesist: '整合者 (3.0)',
+};
+
+export const LevelLabelsEn: Record<Level, string> = {
+  Conformist: 'Conformist (1.0)',
+  Individualist: 'Individualist (2.0)',
+  Synthesist: 'Synthesist (3.0)',
 };
 
 export const LevelDescriptions: Record<Level, string> = {
@@ -43,6 +56,12 @@ export const PhaseLabels: Record<Phase, string> = {
   Discovery: '发现期',
 };
 
+export const PhaseLabelsEn: Record<Phase, string> = {
+  Dissonance: 'Dissonance',
+  Uncertainty: 'Uncertainty',
+  Discovery: 'Discovery',
+};
+
 export const PhaseDescriptions: Record<Phase, string> = {
   Dissonance: '当前阶段的益处已耗尽，感到躁动、无聊或微妙的沮丧',
   Uncertainty: '踏入未知领域，尝试新方法，收集信息和经验',
@@ -57,6 +76,12 @@ export const TraitLabels: Record<Trait, string> = {
   Knowledge: '知识',
   Experience: '经验',
   Skill: '技能',
+};
+
+export const TraitLabelsEn: Record<Trait, string> = {
+  Knowledge: 'Knowledge',
+  Experience: 'Experience',
+  Skill: 'Skill',
 };
 
 // 生活方式原型
@@ -75,6 +100,15 @@ export const LifestyleArchetypeLabels: Record<LifestyleArchetype, string> = {
   Drifter: '漂泊者',
   Specialist: '专家',
   Integrated: '整合者',
+};
+
+export const LifestyleArchetypeLabelsEn: Record<LifestyleArchetype, string> = {
+  Workaholic: 'Workaholic',
+  Seeker: 'Seeker',
+  Optimizer: 'Optimizer',
+  Drifter: 'Drifter',
+  Specialist: 'Specialist',
+  Integrated: 'Integrator',
 };
 
 export const LifestyleArchetypeDescriptions: Record<LifestyleArchetype, string> = {

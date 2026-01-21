@@ -9,7 +9,8 @@ import {
     ResponsiveContainer,
     Tooltip,
 } from 'recharts';
-import { QuadrantAssessment, QuadrantLabels, Quadrant } from '@/lib/types';
+import { QuadrantAssessment, QuadrantLabels, QuadrantLabelsEn, Quadrant } from '@/lib/types';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface RadarChartComponentProps {
     quadrants: QuadrantAssessment[];
@@ -23,12 +24,15 @@ const QuadrantColors: Record<Quadrant, string> = {
 };
 
 export default function RadarChartComponent({ quadrants }: RadarChartComponentProps) {
+    const { language } = useLanguage();
+
     // Transform data for chart
     const data = quadrants.map((q) => ({
-        quadrant: QuadrantLabels[q.quadrant],
+        quadrant: language === 'zh' ? QuadrantLabels[q.quadrant] : QuadrantLabelsEn[q.quadrant],
         level: q.levelNumber + (q.phaseNumber - 1) * 0.33,
         fullMark: 3.99,
         color: QuadrantColors[q.quadrant],
+        originalQuadrant: q.quadrant // Keep original key for colors/logic if needed
     }));
 
     return (
@@ -51,7 +55,7 @@ export default function RadarChartComponent({ quadrants }: RadarChartComponentPr
                         axisLine={false}
                     />
                     <Radar
-                        name="发展水平"
+                        name={language === 'zh' ? "发展水平" : "Development Level"}
                         dataKey="level"
                         stroke="url(#colorGradient)"
                         fill="url(#colorGradient)"
@@ -68,7 +72,10 @@ export default function RadarChartComponent({ quadrants }: RadarChartComponentPr
                                     <div className="glass px-3 py-2 rounded-lg">
                                         <p className="font-medium">{item.quadrant}</p>
                                         <p className="text-sm text-[var(--text-secondary)]">
-                                            等级 {level}.0 · 阶段 {phase}
+                                            {language === 'zh'
+                                                ? `等级 ${level}.0 · 阶段 ${phase}`
+                                                : `Level ${level}.0 · Phase ${phase}`
+                                            }
                                         </p>
                                     </div>
                                 );
@@ -95,7 +102,7 @@ export default function RadarChartComponent({ quadrants }: RadarChartComponentPr
                             style={{ backgroundColor: QuadrantColors[q.quadrant] }}
                         />
                         <span className="text-xs text-[var(--text-secondary)]">
-                            {QuadrantLabels[q.quadrant]}: {q.levelNumber}.{q.phaseNumber}
+                            {language === 'zh' ? QuadrantLabels[q.quadrant] : QuadrantLabelsEn[q.quadrant]}: {q.levelNumber}.{q.phaseNumber}
                         </span>
                     </div>
                 ))}

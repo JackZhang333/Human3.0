@@ -6,10 +6,13 @@ import { createClient } from '@/lib/supabase/client';
 import ChatInterface from '@/components/chat/ChatInterface';
 import Link from 'next/link';
 import { Message } from '@/lib/types';
+import { useLanguage } from '@/contexts/LanguageContext';
+import PageHeader from '@/components/PageHeader';
 
 export const dynamic = 'force-dynamic';
 
 export default function AssessPage() {
+    const { t } = useLanguage();
     const router = useRouter();
     const supabase = createClient();
     const [assessmentId, setAssessmentId] = useState<string | null>(null);
@@ -97,54 +100,54 @@ export default function AssessPage() {
             <div className="min-h-screen flex items-center justify-center">
                 <div className="text-center">
                     <div className="w-12 h-12 border-3 border-[var(--gradient-start)] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                    <p className="text-[var(--text-secondary)]">正在准备评估...</p>
+                    <p className="text-[var(--text-secondary)]">{t('common.loading')}</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="h-screen flex flex-col overflow-hidden">
-            {/* 背景装饰 */}
+        <div className="h-screen flex flex-col overflow-hidden bg-[var(--bg-primary)]">
+            {/* Immersive Dynamic Background */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl" />
-                <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl" />
+                <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-[var(--quadrant-mind)]/10 rounded-full blur-[120px] animate-pulse" style={{ animationDuration: '8s' }} />
+                <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-[var(--quadrant-body)]/10 rounded-full blur-[120px] animate-pulse" style={{ animationDuration: '12s' }} />
+                <div className="absolute top-[20%] left-[10%] w-[30%] h-[30%] bg-[var(--accent-primary)]/5 rounded-full blur-[100px] animate-pulse" style={{ animationDuration: '10s' }} />
+                <div className="absolute bottom-[30%] right-[20%] w-[25%] h-[25%] bg-[var(--quadrant-spirit)]/5 rounded-full blur-[80px] animate-pulse" style={{ animationDuration: '15s' }} />
             </div>
 
-            {/* 顶部导航 */}
-            <header className="relative z-10 flex-shrink-0 px-4 py-3 border-b border-[var(--border)] bg-[var(--background)]/80 backdrop-blur-sm">
-                <div className="max-w-4xl mx-auto flex items-center justify-between">
-                    <Link href="/" className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center font-bold text-white text-sm">
-                            H3
-                        </div>
-                        <span className="font-semibold hidden sm:inline">Human 3.0 评估</span>
-                    </Link>
-
-                    <div className="flex items-center gap-3">
-                        <Link
-                            href="/history"
-                            className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-                        >
-                            历史记录
-                        </Link>
-                        <button
-                            onClick={handleLogout}
-                            className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-                        >
-                            退出
-                        </button>
-                    </div>
-                </div>
+            {/* Top Navigation */}
+            <header className="relative z-20">
+                <PageHeader
+                    title={t('assess.title')}
+                    actions={
+                        <>
+                            <Link
+                                href="/history"
+                                className="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--accent-primary)] transition-colors px-3 py-1.5 rounded-lg hover:bg-white/50"
+                            >
+                                {t('history.title')}
+                            </Link>
+                            <button
+                                onClick={handleLogout}
+                                className="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--accent-primary)] transition-colors px-3 py-1.5 rounded-lg hover:bg-white/50"
+                            >
+                                {t('common.logout')}
+                            </button>
+                        </>
+                    }
+                />
             </header>
 
-            {/* 聊天界面 - 占据剩余空间 */}
-            <main className="relative z-10 flex-1 max-w-4xl w-full mx-auto flex flex-col min-h-0">
-                <ChatInterface
-                    assessmentId={assessmentId || undefined}
-                    initialMessages={initialMessages}
-                    onComplete={handleComplete}
-                />
+            {/* Chat Interface - Immersive Centered Layout */}
+            <main className="relative z-10 flex-1 w-full flex flex-col min-h-0">
+                <div className="flex-1 max-w-5xl w-full mx-auto flex flex-col min-h-0">
+                    <ChatInterface
+                        assessmentId={assessmentId || undefined}
+                        initialMessages={initialMessages}
+                        onComplete={handleComplete}
+                    />
+                </div>
             </main>
         </div>
     );

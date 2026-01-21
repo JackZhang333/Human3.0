@@ -1,29 +1,68 @@
-import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
+import { useLanguage } from '@/contexts/LanguageContext';
+import PageHeader from '@/components/PageHeader';
 import HistoryList from '@/components/history/HistoryList';
 
 export const dynamic = 'force-dynamic';
 
-export default async function HistoryPage() {
-    const supabase = await createClient();
+interface Assessment {
+    id: string;
+    status: string;
+    created_at: string;
+    result: unknown;
+}
 
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser();
+export default function HistoryPage() {
+    const { t, language } = useLanguage();
+    const router = useRouter();
+    const supabase = createClient();
+    const [assessments, setAssessments] = useState<Assessment[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    if (!user) {
-        redirect('/login?redirect=/history');
+    useEffect(() => {
+        const fetchAssessments = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+
+            if (!user) {
+                router.push('/login?redirect=/history');
+                return;
+            }
+
+            const { data, error } = await supabase
+                .from('assessments')
+                .select('id, status, created_at, result')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Error fetching assessments:', error);
+            } else {
+                setAssessments(data || []);
+            }
+            setLoading(false);
+        };
+
+        fetchAssessments();
+    }, [router, supabase]);
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                    <div className="w-12 h-12 border-3 border-[var(--gradient-start)] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                    <p className="text-[var(--text-secondary)]">{t('common.loading')}</p>
+                </div>
+            </div>
+        );
     }
 
-    // Get all assessments for user
-    const { data: assessments } = await supabase
-        .from('assessments')
-        .select('id, status, created_at, result')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
     return (
-        <div className="min-h-screen">
+        <div className="min-h-screen flex flex-col">
             {/* 背景装饰 */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl" />
@@ -31,24 +70,18 @@ export default async function HistoryPage() {
             </div>
 
             {/* 顶部导航 */}
-            <header className="relative z-10 px-4 py-3 border-b border-[var(--border)]">
-                <div className="max-w-4xl mx-auto flex items-center justify-between">
-                    <Link href="/" className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center font-bold text-white text-sm">
-                            H3
-                        </div>
-                        <span className="font-semibold hidden sm:inline">评估历史</span>
-                    </Link>
-
+            <PageHeader
+                title={t('history.title')}
+                actions={
                     <Link href="/assess" className="btn-primary text-sm py-2 px-4">
-                        新评估
+                        {t('nav.startAssessment')}
                     </Link>
-                </div>
-            </header>
+                }
+            />
 
             {/* 内容 */}
-            <main className="relative z-10 max-w-4xl mx-auto px-4 py-8">
-                <h1 className="text-2xl font-bold mb-6">我的评估历史</h1>
+            <main className="relative z-10 max-w-4xl mx-auto px-4 py-8 flex-1">
+                <h1 className="text-2xl font-bold mb-6">{t('history.title')}</h1>
 
                 <HistoryList initialAssessments={assessments || []} />
             </main>

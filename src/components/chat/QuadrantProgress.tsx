@@ -1,5 +1,8 @@
+'use client';
+
 import { Quadrant, QuadrantLabels } from '@/lib/types';
 import { QUADRANT_ORDER } from '@/lib/prompts';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface QuadrantProgressProps {
     currentQuadrant: Quadrant;
@@ -40,56 +43,80 @@ export default function QuadrantProgress({
     currentQuadrant,
     completedQuadrants,
 }: QuadrantProgressProps) {
+    const { language } = useLanguage();
+
+    // Bilingual quadrant labels
+    const quadrantNames: Record<Quadrant, { zh: string; en: string }> = {
+        Mind: { zh: '心智', en: 'Mind' },
+        Body: { zh: '身体', en: 'Body' },
+        Spirit: { zh: '精神', en: 'Spirit' },
+        Vocation: { zh: '使命', en: 'Vocation' },
+    };
     return (
-        <div className="flex items-center justify-between max-w-md mx-auto">
+        <div className="flex items-center justify-between max-w-lg mx-auto w-full px-2">
             {QUADRANT_ORDER.map((quadrant, index) => {
                 const isCompleted = completedQuadrants.includes(quadrant);
                 const isCurrent = currentQuadrant === quadrant;
                 const isPending = !isCompleted && !isCurrent;
 
                 return (
-                    <div key={quadrant} className="flex items-center">
+                    <div key={quadrant} className="flex items-center flex-1 last:flex-none">
                         {/* Step */}
-                        <div className="flex flex-col items-center">
+                        <div className="flex flex-col items-center group">
                             <div
-                                className={`progress-step ${isCompleted
-                                        ? 'progress-step-completed'
-                                        : isCurrent
-                                            ? 'progress-step-active'
-                                            : 'progress-step-pending'
+                                className={`progress-step transition-all duration-500 ${isCompleted
+                                    ? 'shadow-lg'
+                                    : isCurrent
+                                        ? 'shadow-xl scale-110 ring-4 ring-white/50'
+                                        : 'opacity-40 grayscale'
                                     }`}
                                 style={
-                                    isCompleted
-                                        ? { backgroundColor: QuadrantColors[quadrant] }
+                                    isCompleted || isCurrent
+                                        ? {
+                                            backgroundColor: QuadrantColors[quadrant],
+                                            color: 'white',
+                                            borderColor: 'transparent'
+                                        }
                                         : undefined
                                 }
                             >
                                 {isCompleted ? (
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    <svg className="w-5 h-5 animate-scale-in" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                                     </svg>
                                 ) : (
-                                    QuadrantIcons[quadrant]
+                                    <div className={isCurrent ? 'animate-pulse' : ''}>
+                                        {QuadrantIcons[quadrant]}
+                                    </div>
                                 )}
                             </div>
                             <span
-                                className={`text-xs mt-1 ${isCurrent
-                                        ? 'text-[var(--text-primary)] font-medium'
-                                        : isPending
-                                            ? 'text-[var(--text-muted)]'
-                                            : 'text-[var(--text-secondary)]'
+                                className={`text-[10px] uppercase font-bold tracking-tighter mt-2 transition-all duration-300 ${isCurrent
+                                    ? 'text-[var(--text-primary)] translate-y-0.5'
+                                    : 'text-[var(--text-tertiary)]'
                                     }`}
                             >
-                                {QuadrantLabels[quadrant]}
+                                {quadrantNames[quadrant][language]}
                             </span>
                         </div>
 
                         {/* Connector */}
                         {index < QUADRANT_ORDER.length - 1 && (
-                            <div
-                                className={`w-8 md:w-12 h-0.5 mx-2 ${isCompleted ? 'bg-[var(--gradient-start)]' : 'bg-[var(--border)]'
-                                    }`}
-                            />
+                            <div className="flex-1 px-2 mb-6">
+                                <div
+                                    className={`h-0.5 w-full rounded-full transition-all duration-700 ${isCompleted
+                                        ? 'bg-gradient-to-r from-[var(--quadrant-mind)] to-[var(--quadrant-body)] scale-x-100 origin-left'
+                                        : 'bg-black/5'
+                                        }`}
+                                    style={
+                                        isCompleted
+                                            ? {
+                                                backgroundImage: `linear-gradient(to right, ${QuadrantColors[QUADRANT_ORDER[index]]}, ${QuadrantColors[QUADRANT_ORDER[index + 1]]})`
+                                            }
+                                            : {}
+                                    }
+                                />
+                            </div>
                         )}
                     </div>
                 );

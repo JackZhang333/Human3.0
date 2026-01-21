@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { SYSTEM_PROMPT } from '@/lib/prompts';
+import { getSystemPrompt } from '@/lib/prompts';
 
 // MiniMax OpenAI-compatible API endpoint
 const MINIMAX_API_URL = 'https://api.minimaxi.com/v1/chat/completions';
@@ -62,11 +62,11 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const { messages, assessmentId } = await request.json();
+        const { messages, assessmentId, lang = 'zh' } = await request.json();
 
         if (!messages || !Array.isArray(messages)) {
             return NextResponse.json(
-                { error: '无效的消息格式' },
+                { error: lang === 'en' ? 'Invalid message format' : '无效的消息格式' },
                 { status: 400 }
             );
         }
@@ -74,14 +74,14 @@ export async function POST(request: NextRequest) {
         const apiKey = process.env.MINIMAX_API_KEY;
         if (!apiKey) {
             return NextResponse.json(
-                { error: 'AI 服务未配置' },
+                { error: lang === 'en' ? 'AI service not configured' : 'AI 服务未配置' },
                 { status: 500 }
             );
         }
 
         // Prepare messages with system prompt
         const apiMessages = [
-            { role: 'system', content: SYSTEM_PROMPT },
+            { role: 'system', content: getSystemPrompt(lang as 'zh' | 'en') },
             ...messages.map((m: { role: string; content: string }) => ({
                 role: m.role,
                 content: m.content,

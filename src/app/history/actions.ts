@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { SYSTEM_PROMPT } from '@/lib/prompts';
+import { getSystemPrompt } from '@/lib/prompts';
 
 const MINIMAX_API_URL = 'https://api.minimaxi.com/v1/chat/completions';
 
@@ -48,7 +48,7 @@ export async function regenerateAssessmentReport(id: string) {
     if (!apiKey) throw new Error('AI service not configured');
 
     const apiMessages = [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: getSystemPrompt('zh') },
         ...messages.map((m: any) => ({ role: m.role, content: m.content })),
         { role: 'user', content: '请基于以上对话，立即生成完整的评估报告 JSON 数据。确保包含 [ASSESSMENT_COMPLETE] 标记。' }
     ];

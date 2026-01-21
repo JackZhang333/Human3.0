@@ -22,16 +22,18 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
 
     return (
         <div
-            className={`flex ${isUser ? 'justify-end' : 'justify-start'} animate-fade-in`}
+            className={`flex ${isUser ? 'justify-end' : 'justify-start'} animate-slide-up`}
         >
             <div
-                className={`max-w-[85%] md:max-w-[75%] px-4 py-3 ${isUser ? 'message-user' : 'message-assistant'
+                className={`max-w-[85%] md:max-w-[75%] px-5 py-4 ${isUser
+                    ? 'bg-[var(--accent-primary)] text-white rounded-2xl rounded-tr-none shadow-lg shadow-[var(--accent-primary)]/10'
+                    : 'bg-white/80 backdrop-blur-md border border-white/50 text-[var(--text-primary)] rounded-2xl rounded-tl-none shadow-xl shadow-black/5'
                     }`}
             >
                 {isUser ? (
-                    <p className="text-sm md:text-base whitespace-pre-wrap">{displayContent}</p>
+                    <p className="text-sm md:text-base whitespace-pre-wrap leading-relaxed">{displayContent}</p>
                 ) : (
-                    <div className="prose prose-invert prose-sm md:prose-base max-w-none">
+                    <div className="prose prose-sm md:prose-base max-w-none">
                         <ReactMarkdown
                             components={{
                                 p: ({ children }) => (
@@ -40,43 +42,43 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
                                     </p>
                                 ),
                                 strong: ({ children }) => (
-                                    <strong className="font-semibold text-[var(--text-primary)]">
+                                    <strong className="font-semibold text-[var(--accent-primary)]">
                                         {children}
                                     </strong>
                                 ),
                                 ul: ({ children }) => (
-                                    <ul className="list-disc list-inside mb-2 space-y-1">
+                                    <ul className="list-disc list-inside mb-3 space-y-1.5 marker:text-[var(--accent-primary)]">
                                         {children}
                                     </ul>
                                 ),
                                 ol: ({ children }) => (
-                                    <ol className="list-decimal list-inside mb-2 space-y-1">
+                                    <ol className="list-decimal list-inside mb-3 space-y-1.5 marker:text-[var(--accent-primary)]">
                                         {children}
                                     </ol>
                                 ),
                                 li: ({ children }) => (
-                                    <li className="text-sm md:text-base">{children}</li>
+                                    <li className="text-sm md:text-base leading-relaxed">{children}</li>
                                 ),
                                 h1: ({ children }) => (
-                                    <h1 className="text-xl font-bold mb-3 gradient-text">{children}</h1>
+                                    <h1 className="text-xl font-bold mb-4 text-[var(--text-primary)] tracking-tight">{children}</h1>
                                 ),
                                 h2: ({ children }) => (
-                                    <h2 className="text-lg font-semibold mb-2 text-[var(--text-primary)]">
+                                    <h2 className="text-lg font-bold mb-3 text-[var(--text-primary)] tracking-tight">
                                         {children}
                                     </h2>
                                 ),
                                 h3: ({ children }) => (
-                                    <h3 className="text-base font-semibold mb-2 text-[var(--text-primary)]">
+                                    <h3 className="text-base font-bold mb-2 text-[var(--text-primary)]">
                                         {children}
                                     </h3>
                                 ),
                                 blockquote: ({ children }) => (
-                                    <blockquote className="border-l-2 border-[var(--gradient-start)] pl-4 my-2 text-[var(--text-secondary)] italic">
+                                    <blockquote className="border-l-4 border-[var(--accent-primary)]/30 pl-4 py-1 my-3 bg-black/5 rounded-r-md text-[var(--text-secondary)] italic">
                                         {children}
                                     </blockquote>
                                 ),
                                 code: ({ children }) => (
-                                    <code className="bg-[var(--surface)] px-1.5 py-0.5 rounded text-sm font-mono">
+                                    <code className="bg-black/5 px-1.5 py-0.5 rounded text-sm font-mono text-[var(--accent-primary)]">
                                         {children}
                                     </code>
                                 ),

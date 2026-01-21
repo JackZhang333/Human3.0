@@ -1,27 +1,52 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { ToastProvider } from "@/contexts/ToastContext";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import SchemaMarkup from "@/components/SchemaMarkup";
+import { Providers } from "@/components/Providers";
 
 export const metadata: Metadata = {
-  title: "Human 3.0 发展评估 | 发现你的元类型",
-  description: "基于 Human 3.0 模型的心理发展评估系统。通过自适应访谈评估你在心智、身体、精神、使命四个象限的发展状态，获取个性化成长策略。",
-  keywords: ["Human 3.0", "心理评估", "发展评估", "元类型", "个人成长", "四象限"],
+  title: "Human 3.0 Assessment | Become Multidimensionally Jacked Across 4 Quadrants",
+  description: "Are you living a Level 1.0 script or Level 3.0 reality? Map your Mind, Body, Spirit, and Vocation. Stop forcing balance and start systematic lifestyle integration.",
+  keywords: [
+    "Human 3.0",
+    "Human 3.0 Assessment",
+    "Multidimensionally Jacked",
+    "4 Quadrants of Development",
+    "Mind Body Spirit Vocation",
+    "Lifestyle Integration Framework",
+    "Systematic Evolution",
+    "元类型",
+    "心理评估",
+    "发展评估",
+    "个人成长",
+    "Self-Development Assessment",
+    "Integrated Development"
+  ],
   openGraph: {
-    title: "Human 3.0 发展评估",
-    description: "发现你的元类型，开启多维度人生升级之旅",
+    title: "Human 3.0 Assessment | Discover Your Metatype",
+    description: "Map your development across Mind, Body, Spirit, and Vocation. Become multidimensionally jacked through systematic lifestyle integration.",
     type: "website",
     locale: "zh_CN",
+    url: "https://human3.org",
+    siteName: "Human 3.0 Assessment",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Human 3.0 Assessment | Find Your Metatype",
+    description: "Stop forcing balance. Start systematic integration across all 4 quadrants of life.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  verification: {
+    google: 'google-site-verification-code',
   },
 };
 
@@ -31,13 +56,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-CN">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <ToastProvider>
+    <html lang="zh-CN" suppressHydrationWarning>
+      <body className="antialiased">
+        <SchemaMarkup />
+        <Providers>
           {children}
-        </ToastProvider>
+        </Providers>
       </body>
     </html>
   );
