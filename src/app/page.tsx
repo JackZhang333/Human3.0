@@ -1,11 +1,25 @@
 'use client';
 
+import { useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useLanguage } from '@/contexts/LanguageContext';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 export default function HomePage() {
   const { t, language } = useLanguage();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Handle Google OAuth callback redirect error
+  // Sometimes Supabase redirects to root instead of /auth/callback if configuration is incomplete
+  useEffect(() => {
+    const code = searchParams.get('code');
+    if (code) {
+      // Redirect to the auth callback route to complete the sign-in process
+      window.location.href = `/auth/callback?code=${code}&redirect=/assess`;
+    }
+  }, [searchParams]);
 
   return (
     <div className="min-h-screen flex flex-col">
