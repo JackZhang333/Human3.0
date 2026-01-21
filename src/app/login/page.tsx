@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 function LoginForm() {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const router = useRouter();
     const searchParams = useSearchParams();
     const isSignup = searchParams.get('mode') === 'signup';
@@ -31,6 +31,7 @@ function LoginForm() {
     const [error, setError] = useState<string | null>(null);
     const [message, setMessage] = useState<string | null>(null);
     const [showSignupSuccess, setShowSignupSuccess] = useState(false);
+    const [agree, setAgree] = useState(false);
 
     const supabase = createClient();
 
@@ -39,6 +40,12 @@ function LoginForm() {
         setLoading(true);
         setError(null);
         setMessage(null);
+
+        if (mode === 'signup' && !agree) {
+            setError(language === 'zh' ? '请阅读并同意服务条款和隐私政策' : 'Please agree to the Terms and Privacy Policy');
+            setLoading(false);
+            return;
+        }
 
         try {
             if (mode === 'signup') {
@@ -182,6 +189,32 @@ function LoginForm() {
                         </div>
                     </div>
 
+                    {/* Agree Terms Checkbox (Only for Signup) */}
+                    {mode === 'signup' && (
+                        <div className="flex items-start gap-2 pt-1">
+                            <div className="flex items-center h-5">
+                                <input
+                                    id="agree_terms"
+                                    type="checkbox"
+                                    checked={agree}
+                                    onChange={(e) => setAgree(e.target.checked)}
+                                    className="w-4 h-4 rounded border-[var(--border-subtle)] text-[var(--primary)] focus:ring-[var(--primary)] bg-[var(--surface)]"
+                                    required
+                                />
+                            </div>
+                            <label htmlFor="agree_terms" className="text-xs text-[var(--text-secondary)] leading-tight cursor-pointer select-none">
+                                {t('login.agreeTerms') || 'I agree to the'}{' '}
+                                <Link href="/terms" className="text-[var(--primary)] hover:underline" target="_blank">
+                                    {t('login.terms') || 'Terms of Service'}
+                                </Link>
+                                {' '}{t('login.and') || 'and'}{' '}
+                                <Link href="/privacy" className="text-[var(--primary)] hover:underline" target="_blank">
+                                    {t('login.privacy') || 'Privacy Policy'}
+                                </Link>
+                            </label>
+                        </div>
+                    )}
+
                     {error && (
                         <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm flex items-start gap-2 animate-in slide-in-from-top-2 fade-in">
                             <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
@@ -215,6 +248,13 @@ function LoginForm() {
                             )}
                         </div>
                     </button>
+
+                    {/* Disclaimer for Login */}
+                    {mode === 'login' && (
+                        <p className="text-[10px] text-center text-[var(--text-muted)] mt-2">
+                            {t('login.loginDisclaimer') || 'By logging in, you agree to our Terms and Privacy Policy'}
+                        </p>
+                    )}
                 </form>
 
                 {/* 切换模式 */}
@@ -275,6 +315,16 @@ function LoginForm() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* Footer Links */}
+            <div className="mt-8 text-center text-xs text-[var(--text-muted)] flex gap-4 justify-center">
+                <Link href="/privacy" className="hover:text-[var(--text-primary)] transition-colors">
+                    {t('privacy') || (t('login.welcomeBack') === '欢迎回来' ? '隐私政策' : 'Privacy Policy')}
+                </Link>
+                <Link href="/terms" className="hover:text-[var(--text-primary)] transition-colors">
+                    {t('terms') || (t('login.welcomeBack') === '欢迎回来' ? '服务条款' : 'Terms of Service')}
+                </Link>
+            </div>
         </div>
     );
 }
