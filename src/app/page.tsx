@@ -5,7 +5,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 export default function HomePage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -266,9 +266,15 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <img src="/logo.png" alt="Human 3.0" className="h-10 w-auto" />
+            <span className="text-sm text-[var(--text-tertiary)]">© 2024 Human 3.0. {language === 'zh' ? '保留所有权利。' : 'All rights reserved.'}</span>
           </div>
-          <div className="text-sm text-[var(--text-tertiary)]">
-            © 2024 Human 3.0. 保留所有权利。
+          <div className="flex gap-6 text-sm text-[var(--text-secondary)]">
+            <Link href="/privacy" className="hover:text-[var(--text-primary)] transition-colors">
+              {t('privacy') || (language === 'zh' ? '隐私政策' : 'Privacy Policy')}
+            </Link>
+            <Link href="/terms" className="hover:text-[var(--text-primary)] transition-colors">
+              {t('terms') || (language === 'zh' ? '服务条款' : 'Terms of Service')}
+            </Link>
           </div>
         </div>
       </footer>
