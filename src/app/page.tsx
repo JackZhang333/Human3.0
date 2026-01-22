@@ -134,7 +134,10 @@ function HomePage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
             </Link>
-            <Link href="#how-it-works" className="btn-secondary text-base px-8 py-4" aria-label="Learn about the assessment system">
+            <Link
+            target="_blank"
+            rel="noopener noreferrer"
+            href="https://letters.thedankoe.com/p/human-30-a-map-to-reach-the-top-1" className="btn-secondary text-base px-8 py-4" aria-label="Learn about the assessment system">
               {t('hero.ctaSecondary')}
             </Link>
           </div>
@@ -340,10 +343,17 @@ function HomePage() {
           </div>
           <div className="flex gap-6 text-sm text-[var(--text-secondary)]">
             <Link href="/privacy" className="hover:text-[var(--text-primary)] transition-colors">
-              {t('privacy') || (language === 'zh' ? '隐私政策' : 'Privacy Policy')}
+              {language === 'zh' ? '隐私政策' : 'Privacy Policy'}
             </Link>
             <Link href="/terms" className="hover:text-[var(--text-primary)] transition-colors">
-              {t('terms') || (language === 'zh' ? '服务条款' : 'Terms of Service')}
+              {language === 'zh' ? '服务条款' : 'Terms of Service'}
+            </Link>
+            <Link
+              href="https://letters.thedankoe.com/p/human-30-a-map-to-reach-the-top-1"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-[var(--text-primary)] transition-colors">
+              {language === 'zh' ? '人类3.0评估框架 By Dan Koe' : 'Human3.0 By Dan Koe'}
             </Link>
           </div>
         </div>
