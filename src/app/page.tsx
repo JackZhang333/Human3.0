@@ -1,15 +1,20 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useLanguage } from '@/contexts/LanguageContext';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { createClient } from '@/lib/supabase/client';
+import { User } from '@supabase/supabase-js';
+import { LogIn, Rocket } from 'lucide-react';
 
 export default function HomePage() {
   const { t, language } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   // Handle Google OAuth callback redirect error
   // Sometimes Supabase redirects to root instead of /auth/callback if configuration is incomplete
@@ -21,22 +26,76 @@ export default function HomePage() {
     }
   }, [searchParams]);
 
+  // Check authentication status
+  useEffect(() => {
+    const checkUser = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      setLoading(false);
+    };
+    checkUser();
+  }, []);
+
+  // Handle logout
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    setUser(null);
+    router.refresh();
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Navigation */}
-      <header className="px-6 py-4 border-b border-[var(--border-subtle)] bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-        <nav className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <img src="/logo.png" alt="Human 3.0 Assessment Framework Logo - Mind, Body, Spirit, Vocation Integration" className="h-12 w-auto" />
-            <LanguageSwitcher />
+      <header className="px-4 sm:px-6 py-3 sm:py-4 border-b border-[var(--border-subtle)] bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+        <nav className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <img src="/logo.png" alt="Human 3.0" className="h-10 sm:h-12 w-auto" />
+            <div className="hidden sm:block">
+              <LanguageSwitcher />
+            </div>
           </div>
-          <div className="flex items-center gap-4">
-            <Link href="/login" className="btn-secondary text-sm px-6">
-              {t('nav.login')}
-            </Link>
-            <Link href="/login?mode=signup" className="btn-primary text-sm px-6">
-              {t('nav.startAssessment')}
-            </Link>
+          <div className="flex items-center gap-2 sm:gap-4">
+            {/* Mobile: Show language switcher */}
+            <div className="block sm:hidden">
+              <LanguageSwitcher />
+            </div>
+
+            {loading ? (
+              <div className="w-16 sm:w-20 h-8 sm:h-9 bg-[var(--bg-subtle)] animate-pulse rounded-lg" />
+            ) : user ? (
+              <>
+                <Link href="/history" className="btn-primary text-xs sm:text-sm px-3 sm:px-6 py-2">
+                  {language === 'zh' ? '我的评估' : 'My Assessments'}
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="text-xs sm:text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors whitespace-nowrap"
+                >
+                  {language === 'zh' ? '退出' : 'Logout'}
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="btn-secondary px-3 sm:px-6 py-2"
+                  aria-label={t('nav.login')}
+                >
+                  <LogIn className="w-4 h-4 sm:hidden" />
+                  <span className="hidden sm:inline text-sm">{t('nav.login')}</span>
+                </Link>
+                <Link
+                  href="/login?mode=signup"
+                  className="btn-primary px-3 sm:px-6 py-2"
+                  aria-label={language === 'zh' ? '开始评估' : t('nav.startAssessment')}
+                >
+                  <Rocket className="w-4 h-4 sm:hidden" />
+                  <span className="hidden sm:inline text-sm">{language === 'zh' ? '开始评估' : t('nav.startAssessment')}</span>
+                </Link>
+              </>
+            )}
           </div>
         </nav>
       </header>
@@ -142,10 +201,10 @@ export default function HomePage() {
       <section id="how-it-works" className="px-6 py-20 bg-[var(--bg-subtle)]" aria-labelledby="quadrants-heading">
         <div className="max-w-6xl mx-auto">
           <h2 id="quadrants-heading" className="text-3xl md:text-4xl font-semibold text-center mb-3">
-            The 4 Quadrants of Development: Mind, Body, Spirit, Vocation
+            {t('quadrants.heading')}
           </h2>
           <p className="text-[var(--text-secondary)] text-center mb-16 max-w-2xl mx-auto">
-            Human 3.0 maps life development across four interconnected quadrants. True growth requires integration, not specialization. Become multidimensionally jacked.
+            {t('quadrants.subheading')}
           </p>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -156,9 +215,9 @@ export default function HomePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium mb-2">Mind 心智</h3>
+              <h3 className="text-lg font-medium mb-2">{t('quadrants.mind')}</h3>
               <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
-                个人心理世界：思想、情感、信念、世界观、元认知能力
+                {t('quadrants.mindDesc')}
               </p>
             </div>
 
@@ -169,9 +228,9 @@ export default function HomePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium mb-2">身体 Body</h3>
+              <h3 className="text-lg font-medium mb-2">{t('quadrants.body')}</h3>
               <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
-                个人物理世界：健康、体能、营养、睡眠、精力管理
+                {t('quadrants.bodyDesc')}
               </p>
             </div>
 
@@ -182,9 +241,9 @@ export default function HomePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium mb-2">精神 Spirit</h3>
+              <h3 className="text-lg font-medium mb-2">{t('quadrants.spirit')}</h3>
               <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
-                集体心理世界：关系、意义、社群、归属感、文化连接
+                {t('quadrants.spiritDesc')}
               </p>
             </div>
 
@@ -195,9 +254,9 @@ export default function HomePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium mb-2">使命 Vocation</h3>
+              <h3 className="text-lg font-medium mb-2">{t('quadrants.vocation')}</h3>
               <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
-                集体物理世界：事业、价值创造、影响力、贡献与遗产
+                {t('quadrants.vocationDesc')}
               </p>
             </div>
           </div>
@@ -208,10 +267,10 @@ export default function HomePage() {
       <section className="px-6 py-20" aria-labelledby="levels-heading">
         <div className="max-w-3xl mx-auto">
           <h2 id="levels-heading" className="text-3xl md:text-4xl font-semibold text-center mb-3">
-            3 Consciousness Levels: From Conformist to Synthesist
+            {t('levels.heading')}
           </h2>
           <p className="text-[var(--text-secondary)] text-center mb-16 max-w-2xl mx-auto">
-            Each quadrant evolves through three levels of awareness. Higher levels don't abandon, they transcend and include. Discover your current stage.
+            {t('levels.subheading')}
           </p>
 
           <div className="space-y-4">
@@ -221,10 +280,9 @@ export default function HomePage() {
                 <span className="text-lg font-medium text-[var(--text-secondary)]">1.0</span>
               </div>
               <div>
-                <h3 className="text-lg font-medium mb-1">从众者 Conformist</h3>
+                <h3 className="text-lg font-medium mb-1">{t('levels.conformist')}</h3>
                 <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
-                  遵循权威和传统，非黑即白的思维。基于外部验证生活，
-                  像游戏中的 NPC，按照预设脚本运行。
+                  {t('levels.conformistDesc')}
                 </p>
               </div>
             </div>
@@ -235,10 +293,9 @@ export default function HomePage() {
                 <span className="text-lg font-medium text-[var(--accent-primary)]">2.0</span>
               </div>
               <div>
-                <h3 className="text-lg font-medium mb-1">个体者 Individualist</h3>
+                <h3 className="text-lg font-medium mb-1">{t('levels.individualist')}</h3>
                 <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
-                  拒绝从众，追求个人目标。相信自己发现的方式是正确的，
-                  成为选择自己故事线的主角，但可能把对立当作智慧。
+                  {t('levels.individualistDesc')}
                 </p>
               </div>
             </div>
@@ -249,10 +306,9 @@ export default function HomePage() {
                 <span className="text-lg font-medium">3.0</span>
               </div>
               <div>
-                <h3 className="text-lg font-medium mb-1">整合者 Synthesist</h3>
+                <h3 className="text-lg font-medium mb-1">{t('levels.synthesist')}</h3>
                 <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
-                  整合多元视角，在悖论和复杂中识别真理。创造新游戏而非玩现有游戏，
-                  拥有程序员级别的现实建构意识。
+                  {t('levels.synthesistDesc')}
                 </p>
               </div>
             </div>
@@ -264,13 +320,13 @@ export default function HomePage() {
       <section className="px-6 py-20 bg-[var(--bg-subtle)]">
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-semibold mb-4">
-            准备好发现你的元类型了吗？
+            {t('cta.heading')}
           </h2>
           <p className="text-[var(--text-secondary)] mb-8 text-base">
-            免费完成评估，获取你的个性化发展报告和转变策略
+            {t('cta.subheading')}
           </p>
           <Link href="/login?mode=signup" className="btn-primary text-base px-8 py-3 inline-block">
-            开始我的评估
+            {t('cta.button')}
           </Link>
         </div>
       </section>
