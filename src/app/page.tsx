@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -9,7 +9,7 @@ import { createClient } from '@/lib/supabase/client';
 import { User } from '@supabase/supabase-js';
 import { LogIn, Rocket } from 'lucide-react';
 
-export default function HomePage() {
+function HomePage() {
   const { t, language } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -349,5 +349,35 @@ export default function HomePage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+// Loading fallback component
+function HomePageLoading() {
+  return (
+    <div className="min-h-screen flex flex-col">
+      <header className="px-4 sm:px-6 py-3 sm:py-4 border-b border-[var(--border-subtle)] bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+        <nav className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <div className="h-10 sm:h-12 w-32 bg-[var(--bg-subtle)] animate-pulse rounded" />
+          </div>
+          <div className="flex items-center gap-2 sm:gap-4">
+            <div className="w-20 h-8 bg-[var(--bg-subtle)] animate-pulse rounded-lg" />
+          </div>
+        </nav>
+      </header>
+      <main className="flex-1 flex items-center justify-center">
+        <div className="w-16 h-16 border-4 border-[var(--accent-primary)]/20 border-t-[var(--accent-primary)] rounded-full animate-spin" />
+      </main>
+    </div>
+  );
+}
+
+// Wrap in Suspense to handle useSearchParams
+export default function HomePageWrapper() {
+  return (
+    <Suspense fallback={<HomePageLoading />}>
+      <HomePage />
+    </Suspense>
   );
 }
