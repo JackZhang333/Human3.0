@@ -17,6 +17,7 @@ export default function AssessPage() {
     const supabase = createClient();
     const [assessmentId, setAssessmentId] = useState<string | null>(null);
     const [initialMessages, setInitialMessages] = useState<Message[] | undefined>(undefined);
+    const [initialResult, setInitialResult] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -30,10 +31,38 @@ export default function AssessPage() {
                     return;
                 }
 
-                // Check for existing in-progress assessment
+                // Check for ID in URL
+                const searchParams = new URLSearchParams(window.location.search);
+                const targetId = searchParams.get('id');
+
+                if (targetId) {
+                    // Load specific assessment
+                    const { data: assessment, error } = await supabase
+                        .from('assessments')
+                        .select('id, conversation, status, result')
+                        .eq('id', targetId)
+                        .eq('user_id', user.id)
+                        .single();
+
+                    if (!error && assessment) {
+                        setAssessmentId(assessment.id);
+                        if (assessment.result) setInitialResult(assessment.result);
+                        if (assessment.conversation && Array.isArray(assessment.conversation)) {
+                            setInitialMessages(assessment.conversation.map((msg: { role: string; content: string }, index: number) => ({
+                                id: String(index + 1),
+                                role: msg.role as 'user' | 'assistant',
+                                content: msg.content,
+                                timestamp: new Date(),
+                            })));
+                        }
+                        return;
+                    }
+                }
+
+                // Fallback to checking for existing in-progress assessment
                 const { data: existingAssessments } = await supabase
                     .from('assessments')
-                    .select('id, conversation')
+                    .select('id, conversation, result')
                     .eq('user_id', user.id)
                     .eq('status', 'in_progress')
                     .order('created_at', { ascending: false })
@@ -42,6 +71,7 @@ export default function AssessPage() {
                 if (existingAssessments && existingAssessments.length > 0) {
                     const existing = existingAssessments[0];
                     setAssessmentId(existing.id);
+                    if (existing.result) setInitialResult(existing.result);
 
                     // 恢复之前的对话
                     if (existing.conversation && Array.isArray(existing.conversation) && existing.conversation.length > 0) {
@@ -83,10 +113,7 @@ export default function AssessPage() {
 
     const handleComplete = (result: unknown) => {
         console.log('Assessment complete:', result);
-        // Navigate to report page
-        if (assessmentId) {
-            router.push(`/report/${assessmentId}`);
-        }
+        // 不再自动跳转，让用户在聊天界面点击按钮跳转
     };
 
     const handleLogout = async () => {
@@ -145,6 +172,7 @@ export default function AssessPage() {
                     <ChatInterface
                         assessmentId={assessmentId || undefined}
                         initialMessages={initialMessages}
+                        initialResult={initialResult}
                         onComplete={handleComplete}
                     />
                 </div>

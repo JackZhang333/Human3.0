@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getSystemPrompt } from '@/lib/prompts';
+import { extractAssessmentReport } from '@/lib/reportUtils';
 
 // MiniMax OpenAI-compatible API endpoint
 const MINIMAX_API_URL = 'https://api.minimaxi.com/v1/chat/completions';
@@ -248,8 +249,6 @@ async function saveToDatabase(
     console.log('saveToDatabase called, assessmentId:', assessmentId, 'messages:', conversationMessages?.length || 0);
 
     try {
-        const isComplete = aiResponse.includes('[ASSESSMENT_COMPLETE]');
-
         const updateData: Record<string, unknown> = {
             updated_at: new Date().toISOString(),
         };
@@ -270,70 +269,16 @@ async function saveToDatabase(
             console.log('Prepared conversation with', cleanedConversation.length, 'messages');
         }
 
-        if (isComplete) {
-            // Find JSON by tracking brace depth instead of greedy regex
-            const markerIndex = aiResponse.indexOf('[ASSESSMENT_COMPLETE]');
-            if (markerIndex !== -1) {
-                const afterMarker = aiResponse.slice(markerIndex + '[ASSESSMENT_COMPLETE]'.length);
-                const jsonStartIndex = afterMarker.indexOf('{');
+        // Try to parse assessment result using the robust utility
+        // The utility handles checking for [ASSESSMENT_COMPLETE] and extracting the JSON
+        const result = extractAssessmentReport(aiResponse);
 
-                if (jsonStartIndex !== -1) {
-                    // Track brace depth to find matching closing brace
-                    let depth = 0;
-                    let jsonEndIndex = -1;
-                    let inString = false;
-                    let escaped = false;
-
-                    for (let i = jsonStartIndex; i < afterMarker.length; i++) {
-                        const char = afterMarker[i];
-
-                        if (escaped) {
-                            escaped = false;
-                            continue;
-                        }
-
-                        if (char === '\\' && inString) {
-                            escaped = true;
-                            continue;
-                        }
-
-                        if (char === '"' && !escaped) {
-                            inString = !inString;
-                            continue;
-                        }
-
-                        if (!inString) {
-                            if (char === '{') depth++;
-                            else if (char === '}') {
-                                depth--;
-                                if (depth === 0) {
-                                    jsonEndIndex = i;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-
-                    if (jsonEndIndex !== -1) {
-                        try {
-                            let jsonStr = afterMarker.slice(jsonStartIndex, jsonEndIndex + 1);
-                            // Clean control characters
-                            jsonStr = jsonStr.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
-                            // Escape newlines within the string for JSON parsing
-                            jsonStr = jsonStr.replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t');
-                            const result = JSON.parse(jsonStr);
-                            updateData.result = result;
-                            updateData.status = 'completed';
-                            console.log('Assessment completed, saving result');
-                        } catch (e) {
-                            console.error('Failed to parse assessment result:', e);
-                            console.error('JSON string length:', afterMarker.slice(jsonStartIndex, jsonEndIndex + 1).length);
-                        }
-                    } else {
-                        console.error('Could not find matching closing brace for JSON');
-                    }
-                }
-            }
+        if (result) {
+            updateData.result = result;
+            updateData.status = 'completed';
+            console.log('Assessment completed, saving result');
+        } else {
+            console.log('Assessment not complete or result parsing failed (expected if still in progress)');
         }
 
         const { error } = await supabase

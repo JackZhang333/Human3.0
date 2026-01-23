@@ -1,0 +1,114 @@
+import { Message, Quadrant, QUADRANT_ORDER } from './types';
+import { extractAssessmentReport } from './reportUtils';
+
+export interface AssessmentState {
+    currentQuadrant: Quadrant;
+    completedQuadrants: Quadrant[];
+    isComplete: boolean;
+    isReadyToGenerate: boolean;
+    reportResult: any | null;
+}
+
+export const detectAssessmentState = (messages: Message[]): AssessmentState => {
+    let currentQuadrant: Quadrant = 'Mind';
+    const completedQuadrants: Quadrant[] = [];
+    let isComplete = false;
+    let isReadyToGenerate = false;
+    let reportResult: any | null = null;
+
+    // Transition keywords for each quadrant
+    const quadrantIndicators: Record<Quadrant, string[]> = {
+        Mind: ['心智', 'mind', '内在现实', 'internal reality'],
+        Body: ['身体', 'body', '体能', 'physical'],
+        Spirit: ['精神', 'spirit', '集体心理', 'collective psychological'],
+        Vocation: ['使命', 'vocation', '事业', 'collective physical']
+    };
+
+    // Progression logic
+    for (const msg of messages) {
+        if (msg.role !== 'assistant') continue;
+
+        const content = msg.content.toLowerCase();
+
+        // Check for completion first
+        if (content.includes('[assessment_complete]') || content.includes('{"metatype":')) {
+            isComplete = true;
+            isReadyToGenerate = true; // If complete, it is also ready (or was ready)
+            reportResult = extractAssessmentReport(msg.content);
+            if (isComplete) {
+                // If complete, all are finished
+                return {
+                    currentQuadrant: 'Vocation',
+                    completedQuadrants: [...QUADRANT_ORDER],
+                    isComplete: true,
+                    isReadyToGenerate: true,
+                    reportResult
+                };
+            }
+        }
+
+        // Check for soft completion / ready to generate signals
+        // These are phrases the AI might use when it thinks it has enough info but hasn't received the command to generate JSON yet.
+        const completionSignals = [
+            'assessment is complete', '评估已完成',
+            'concludes our interview', '访谈结束',
+            'complete your profile', '生成您的档案',
+            'generating your report', '生成您的报告',
+            'thank you for sharing', '感谢你的分享',
+            'gathering all the insights', '汇总所有洞见'
+        ];
+
+        // Only check for signals if we are already in Vocation and not yet complete
+        if (currentQuadrant === 'Vocation' && !isComplete) {
+            if (completionSignals.some(signal => content.includes(signal))) {
+                isReadyToGenerate = true;
+            }
+        }
+
+        // Detect transitions to next quadrants
+        // We look for transition cues and update the "current" state
+        // Order: Mind -> Body -> Spirit -> Vocation
+
+        if (shouldTransitionTo('Body', content)) {
+            if (!completedQuadrants.includes('Mind')) completedQuadrants.push('Mind');
+            currentQuadrant = 'Body';
+        }
+
+        if (shouldTransitionTo('Spirit', content)) {
+            if (!completedQuadrants.includes('Mind')) completedQuadrants.push('Mind');
+            if (!completedQuadrants.includes('Body')) completedQuadrants.push('Body');
+            currentQuadrant = 'Spirit';
+        }
+
+        if (shouldTransitionTo('Vocation', content)) {
+            if (!completedQuadrants.includes('Mind')) completedQuadrants.push('Mind');
+            if (!completedQuadrants.includes('Body')) completedQuadrants.push('Body');
+            if (!completedQuadrants.includes('Spirit')) completedQuadrants.push('Spirit');
+            currentQuadrant = 'Vocation';
+        }
+    }
+
+    // Force isReadyToGenerate if we have really good signal for Vocation wrapping up
+    // This is a backup if the specific phrase wasn't caught in the loop but we are deep in vocation.
+    // However, purely relying on loop is safer to avoiding premature triggering.
+    // For now, let's trust the completionSignals in the loop or the explicit isComplete.
+
+    return {
+        currentQuadrant,
+        completedQuadrants,
+        isComplete,
+        isReadyToGenerate,
+        reportResult
+    };
+};
+
+const shouldTransitionTo = (quadrant: Quadrant, content: string): boolean => {
+    const triggers: Record<Quadrant, string[]> = {
+        Mind: [], // Starting point
+        Body: ['让我们从你的身体象限开始', '让我们来看看身体象限', 'move on to your body', 'physical quadrant', '身体象限'],
+        Spirit: ['让我们来看看精神象限', '精神象限', 'spirit quadrant', 'move on to your spirit'],
+        Vocation: ['进入使命象限', '使命象限', 'vocation quadrant', 'move on to your vocation']
+    };
+
+    return triggers[quadrant].some(t => content.includes(t.toLowerCase()));
+};

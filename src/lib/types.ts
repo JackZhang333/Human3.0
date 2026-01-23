@@ -17,6 +17,13 @@ export const QuadrantLabelsEn: Record<Quadrant, string> = {
   Vocation: 'Vocation',
 };
 
+export const QUADRANT_ORDER: Quadrant[] = [
+  'Mind',
+  'Body',
+  'Spirit',
+  'Vocation',
+];
+
 export const QuadrantDescriptions: Record<Quadrant, string> = {
   Mind: '个人心理世界 - 思想、情感、信念、世界观',
   Body: '个人物理世界 - 健康、体能、营养、精力',

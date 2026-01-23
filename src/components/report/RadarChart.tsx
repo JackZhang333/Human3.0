@@ -36,8 +36,8 @@ export default function RadarChartComponent({ quadrants }: RadarChartComponentPr
     }));
 
     return (
-        <div className="w-full max-w-md h-80" style={{ minWidth: '320px', minHeight: '320px' }}>
-            <ResponsiveContainer width="100%" height="100%">
+        <div className="w-full max-w-md h-80" style={{ minWidth: '320px', minHeight: '320px', width: '400px', height: '320px' }}>
+            <ResponsiveContainer width={400} height={320}>
                 <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
                     <PolarGrid
                         stroke="rgba(255,255,255,0.1)"

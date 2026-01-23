@@ -2,6 +2,7 @@
 
 import { useRef } from 'react';
 import Link from 'next/link';
+import { MessageCircle } from 'lucide-react';
 import { AssessmentResult } from '@/lib/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 import PageHeader from '@/components/PageHeader';
@@ -31,6 +32,39 @@ export default function ReportContent({ assessment }: ReportContentProps) {
     const result = (assessment.result || {}) as Partial<AssessmentResult>;
     const quadrants = Array.isArray(result.quadrants) ? result.quadrants : [];
 
+    // 辅助函数：将任意颜色格式转换为 RGB
+    const convertColorToRGB = (color: string): string | null => {
+        if (!color || color === 'transparent' || color === 'inherit' || color === 'initial' || color === 'currentcolor') {
+            return null;
+        }
+
+        // 如果已经确定是有效的标准格式，直接返回
+        if (color.startsWith('rgb(') || color.startsWith('rgba(') || (color.startsWith('#') && (color.length === 4 || color.length === 7 || color.length === 5 || color.length === 9))) {
+            return color;
+        }
+
+        // 只有包含现代颜色函数或 CSS 变量时才尝试处理
+        if (color.includes('lab') || color.includes('lch') || color.includes('oklab') || color.includes('oklch')) {
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = 1;
+                canvas.height = 1;
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                    ctx.fillStyle = color;
+                    ctx.fillRect(0, 0, 1, 1);
+                    const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
+                    return a === 255 ? `rgb(${r}, ${g}, ${b})` : `rgba(${r}, ${g}, ${b}, ${a / 255})`;
+                }
+            } catch (e) {
+                console.warn('Color conversion failed:', color, e);
+                return '#666666'; // 默认灰色
+            }
+        }
+
+        return null;
+    };
+
     const handleExportPDF = async () => {
         if (typeof window === 'undefined') return;
 
@@ -38,6 +72,67 @@ export default function ReportContent({ assessment }: ReportContentProps) {
         const element = reportRef.current;
 
         if (!element) return;
+
+        // 保存原始样式以便稍后恢复
+        const originalStyles: Map<Element, string> = new Map();
+        const originalAttrs: Map<Element, { name: string, value: string }[]> = new Map();
+
+        // 递归转换颜色（在原始文档上运行，确保克隆时已经转换）
+        const convertColors = (el: Element) => {
+            if (el instanceof HTMLElement || el instanceof SVGElement) {
+                // 保存原始 style
+                originalStyles.set(el, el.getAttribute('style') || '');
+
+                const style = window.getComputedStyle(el);
+                const props = [
+                    'color', 'background-color', 'border-color', 'fill', 'stroke',
+                    'stop-color', 'outline-color', 'flood-color', 'lighting-color',
+                    'text-decoration-color'
+                ];
+
+                props.forEach(prop => {
+                    const val = style.getPropertyValue(prop);
+                    if (val && (val.includes('lab') || val.includes('lch'))) {
+                        const rgb = convertColorToRGB(val);
+                        if (rgb) {
+                            (el as HTMLElement).style.setProperty(prop, rgb, 'important');
+                        }
+                    }
+                });
+
+                // 处理 SVG 特有属性
+                if (el instanceof SVGElement) {
+                    const attrsToConvert = ['fill', 'stroke', 'stop-color'];
+                    const savedAttrs: { name: string, value: string }[] = [];
+                    attrsToConvert.forEach(attr => {
+                        const val = el.getAttribute(attr);
+                        if (val) {
+                            savedAttrs.push({ name: attr, value: val });
+                            if (val.includes('lab') || val.includes('lch')) {
+                                const rgb = convertColorToRGB(val);
+                                if (rgb) el.setAttribute(attr, rgb);
+                            }
+                        }
+                    });
+                    if (savedAttrs.length > 0) originalAttrs.set(el, savedAttrs);
+                }
+            }
+            Array.from(el.children).forEach(child => convertColors(child));
+        };
+
+        // 恢复原始状态
+        const restoreAll = () => {
+            originalStyles.forEach((style, el) => {
+                if (style) el.setAttribute('style', style);
+                else el.removeAttribute('style');
+            });
+            originalAttrs.forEach((attrs, el) => {
+                attrs.forEach(attr => el.setAttribute(attr.name, attr.value));
+            });
+        };
+
+        // 导出前转换
+        convertColors(element);
 
         const opt = {
             margin: 10,
@@ -49,26 +144,23 @@ export default function ReportContent({ assessment }: ReportContentProps) {
                 logging: false,
                 windowWidth: 800,
                 width: 800,
-                // 防止 oklch/oklab 颜色解析错误
                 onclone: (clonedDoc: Document) => {
                     const style = clonedDoc.createElement('style');
                     style.innerHTML = `
-                        * { 
-                            -webkit-print-color-adjust: exact !important;
-                            color-adjust: exact !important;
-                        }
-                        /* 强制移除可能导致 html2canvas 崩溃或显示不正常的现代 CSS 特性 */
+                        * { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
                         .blur-3xl, .blur-2xl, .blur-xl { filter: none !important; }
                         .glass { 
                             backdrop-filter: none !important; 
                             -webkit-backdrop-filter: none !important; 
-                            background: rgb(255, 255, 255) !important; 
-                            box-shadow: none !important;
-                            border: 1px solid #e5e5e5 !important;
+                            background: rgba(255, 255, 255, 0.9) !important; 
                         }
-                        /* For dark mode compatibility if exported */
-                        @media (prefers-color-scheme: dark) {
-                             .glass { background: #1a1a1a !important; border-color: #333 !important; }
+                        .recharts-responsive-container { width: 400px !important; height: 320px !important; }
+                        :root {
+                            --bg-primary: #FAFAFA !important;
+                            --bg-secondary: #FFFFFF !important;
+                            --text-primary: #1A1A1A !important;
+                            --text-secondary: #666666 !important;
+                            --text-tertiary: #999999 !important;
                         }
                     `;
                     clonedDoc.head.appendChild(style);
@@ -77,7 +169,14 @@ export default function ReportContent({ assessment }: ReportContentProps) {
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
         };
 
-        html2pdf().set(opt).from(element).save();
+        try {
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await html2pdf().set(opt).from(element).save();
+        } catch (err) {
+            console.error('PDF Export Error:', err);
+        } finally {
+            restoreAll();
+        }
     };
 
     return (
@@ -100,14 +199,15 @@ export default function ReportContent({ assessment }: ReportContentProps) {
                 actions={
                     <>
                         <Link
-                            href="/assess"
-                            className="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                            href={`/assess?id=${assessment.id}`}
+                            className="bg-[var(--accent-subtle)] text-[var(--accent-primary)] hover:bg-[var(--accent-primary)] hover:text-white px-4 py-2 rounded-full transition-all flex items-center gap-2 group shadow-sm hover:shadow-md text-sm font-semibold"
                         >
-                            {t('nav.startAssessment')}
+                            <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                            {language === 'zh' ? '继续聊天' : 'Continue Chatting'}
                         </Link>
                         <button
                             onClick={handleExportPDF}
-                            className="btn-secondary text-sm py-2 px-4 shadow-sm hover:shadow transition-all bg-white/80 backdrop-blur-sm"
+                            className="btn-secondary text-sm py-2 px-4 shadow-sm hover:shadow transition-all bg-white/80 backdrop-blur-sm border border-[var(--border-subtle)]"
                         >
                             {language === 'zh' ? '导出 PDF' : 'Export PDF'}
                         </button>

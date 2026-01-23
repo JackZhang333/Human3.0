@@ -2,8 +2,11 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Message, Quadrant, QuadrantLabels } from '@/lib/types';
-import { getInitialMessage, QUADRANT_ORDER } from '@/lib/prompts';
+import { Message, Quadrant, QuadrantLabels, QUADRANT_ORDER } from '@/lib/types';
+import { getInitialMessage } from '@/lib/prompts';
+import { detectAssessmentState } from '@/lib/assessmentStateManager';
+import Link from 'next/link';
+import { LayoutDashboard, RefreshCw } from 'lucide-react';
 import MessageBubble from './MessageBubble';
 import ChatInput from './ChatInput';
 import QuadrantProgress from './QuadrantProgress';
@@ -23,12 +26,14 @@ import {
 interface ChatInterfaceProps {
     assessmentId?: string;
     initialMessages?: Message[];
+    initialResult?: any;
     onComplete?: (result: unknown) => void;
 }
 
 export default function ChatInterface({
     assessmentId,
     initialMessages,
+    initialResult,
     onComplete,
 }: ChatInterfaceProps) {
     const { t, language } = useLanguage();
@@ -45,14 +50,16 @@ export default function ChatInterface({
     );
     const [isLoading, setIsLoading] = useState(false);
     const [currentQuadrant, setCurrentQuadrant] = useState<Quadrant>('Mind');
-    const [completedQuadrants, setCompletedQuadrants] = useState<Quadrant[]>([]);
+    const [completedQuadrants, setCompletedQuadrants] = useState<Quadrant[]>(
+        initialResult ? ['Mind', 'Body', 'Spirit', 'Vocation'] : []
+    );
     const [streamingContent, setStreamingContent] = useState('');
     const { showToast } = useToast();
+    const [reportResult, setReportResult] = useState<any>(initialResult || null);
 
     // Dialog states
     const [showTimeoutDialog, setShowTimeoutDialog] = useState(false);
     const [readyToView, setReadyToView] = useState(false);
-    const [reportResult, setReportResult] = useState<unknown>(null);
     const generationTimerRef = useRef<NodeJS.Timeout | null>(null);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -94,97 +101,65 @@ export default function ChatInterface({
 
     // Detect quadrant changes based on AI responses
     useEffect(() => {
-        const lastAssistantMessage = [...messages].reverse().find(m => m.role === 'assistant');
-        if (!lastAssistantMessage) return;
+        const state = detectAssessmentState(messages);
 
-        const content = lastAssistantMessage.content.toLowerCase();
+        // Progressively mark quadrants as completed
+        if (state.completedQuadrants.length > completedQuadrants.length) {
+            setCompletedQuadrants(state.completedQuadrants);
+        }
 
-        // Simple quadrant detection based on keywords
-        if ((content.includes('身体') || content.includes('body')) && (content.includes('象限') || content.includes('quadrant')) && currentQuadrant === 'Mind') {
-            setCompletedQuadrants(prev => {
-                if (prev.includes('Mind')) return prev;
-                return [...prev, 'Mind'];
-            });
-            setCurrentQuadrant('Body');
-        } else if ((content.includes('精神') || content.includes('spirit')) && (content.includes('象限') || content.includes('quadrant')) && currentQuadrant === 'Body') {
-            setCompletedQuadrants(prev => {
-                if (prev.includes('Body')) return prev;
-                return [...prev, 'Body'];
-            });
-            setCurrentQuadrant('Spirit');
-        } else if ((content.includes('使命') || content.includes('vocation')) && (content.includes('象限') || content.includes('quadrant')) && currentQuadrant === 'Spirit') {
-            setCompletedQuadrants(prev => {
-                if (prev.includes('Spirit')) return prev;
-                return [...prev, 'Spirit'];
-            });
-            setCurrentQuadrant('Vocation');
+        // Update current quadrant if it has moved forward
+        if (state.currentQuadrant !== currentQuadrant) {
+            // Only move forward, never backward
+            const currentIndex = QUADRANT_ORDER.indexOf(currentQuadrant);
+            const nextIndex = QUADRANT_ORDER.indexOf(state.currentQuadrant);
+            if (nextIndex > currentIndex) {
+                setCurrentQuadrant(state.currentQuadrant);
+            }
         }
 
         // Check for assessment completion
-        if (lastAssistantMessage.content.includes('[ASSESSMENT_COMPLETE]')) {
+        if (state.isComplete && !reportResult && state.reportResult) {
+            setReportResult(state.reportResult);
+            // Ensure all quadrants are marked complete
             setCompletedQuadrants(['Mind', 'Body', 'Spirit', 'Vocation']);
+            if (!initialResult) {
+                showToast('🎉 评估报告已生成！你可以点击上方按钮查看。', 'success', 3000);
 
-            // Extract result JSON - try multiple patterns
-            let jsonStr: string | null = null;
-
-            // Pattern 1: Single line JSON after marker
-            const singleLineMatch = lastAssistantMessage.content.match(/\[ASSESSMENT_COMPLETE\]\s*(\{[^\n]*\})/);
-            if (singleLineMatch) {
-                jsonStr = singleLineMatch[1];
-            }
-
-            // Pattern 2: JSON in code block
-            if (!jsonStr) {
-                const codeBlockMatch = lastAssistantMessage.content.match(/\[ASSESSMENT_COMPLETE\][\s\S]*?```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
-                if (codeBlockMatch) {
-                    jsonStr = codeBlockMatch[1];
-                }
-            }
-
-            // Pattern 3: Multiline JSON after marker
-            if (!jsonStr) {
-                const multilineMatch = lastAssistantMessage.content.match(/\[ASSESSMENT_COMPLETE\]\s*(\{[\s\S]*\})/);
-                if (multilineMatch) {
-                    jsonStr = multilineMatch[1];
-                }
-            }
-
-            if (jsonStr) {
-                try {
-                    // 清理 JSON 字符串
-                    // 移除未转义的控制字符
-                    let cleanJson = jsonStr.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
-                    // 规范化换行符
-                    cleanJson = cleanJson.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-
-                    let result: unknown;
-                    try {
-                        result = JSON.parse(cleanJson);
-                    } catch {
-                        // 如果直接解析失败，尝试转义换行符后解析
-                        cleanJson = cleanJson.replace(/\n/g, '\\n').replace(/\t/g, '\\t');
-                        result = JSON.parse(cleanJson);
-                    }
-
-                    setReportResult(result);
-
-                    // If dialog is open, update state to ready
-                    if (showTimeoutDialog) {
-                        setReadyToView(true);
-                        showToast('🎉 评估报告已生成！', 'success', 3000);
-                    } else {
-                        // Directly complete if no dialog
-                        showToast('🎉 评估报告生成成功！正在跳转...', 'success', 3000);
-                        if (onComplete) onComplete(result);
-                    }
-
-                } catch (e) {
-                    console.error('Failed to parse assessment result:', e);
-                    showToast(t('report.error'), 'error');
+                // Explicitly sync status to server to ensure it's marked as completed
+                if (assessmentId) {
+                    fetch(`/api/assess/${assessmentId}/complete`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ result: state.reportResult })
+                    }).catch(err => console.error('Failed to sync completion status:', err));
                 }
             }
         }
-    }, [messages, currentQuadrant, onComplete, showTimeoutDialog, t, showToast]);
+
+        // Auto-trigger report generation if ready but not yet complete
+        if (state.isReadyToGenerate && !reportResult && !isLoading && !state.isComplete) {
+            // Check if we already have a pending generation to avoid loops
+            // We use a check to see if the last message is already a generation prompt
+            const lastMessage = messages[messages.length - 1];
+            const isLastMessageUser = lastMessage?.role === 'user';
+
+            // Only trigger if we aren't already generating and haven't just asked for it
+            if (!isLastMessageUser) {
+                const generationPrompt = language === 'zh'
+                    ? "请基于我们之前的全部对话，现在生成我的 Human 3.0 评估报告。请确保包含完整的 [ASSESSMENT_COMPLETE] 标记和 JSON 结果。"
+                    : "Please generate my Human 3.0 assessment report now based on our entire conversation. Ensure to include the full [ASSESSMENT_COMPLETE] marker and JSON result.";
+
+                sendMessage(generationPrompt);
+            }
+        }
+
+        // If ready to generate, ensure we are showing 4/4 progress visually even if report isn't parsed yet
+        if (state.isReadyToGenerate && completedQuadrants.length < 4) {
+            setCompletedQuadrants(['Mind', 'Body', 'Spirit', 'Vocation']);
+        }
+
+    }, [messages, currentQuadrant, completedQuadrants, reportResult, initialResult, t, showToast, isLoading, language]); // Added missing deps
 
     const sendMessage = async (content: string) => {
         if (!content.trim() || isLoading) return;
@@ -201,13 +176,8 @@ export default function ChatInterface({
         setIsLoading(true);
         setStreamingContent('');
 
-        // Optimistic update for Vocation (final quadrant) to trigger generation UI
-        if (currentQuadrant === 'Vocation') {
-            setCompletedQuadrants(prev => {
-                if (prev.includes('Vocation')) return prev;
-                return [...prev, 'Vocation'];
-            });
-        }
+        // REMOVED: Optimistic update for Vocation (final quadrant)
+        // We now rely on detectAssessmentState finding the "wrap up" cues to mark Vocation as done
 
         // Prepare messages for API
         const apiMessages = messages
@@ -215,6 +185,7 @@ export default function ChatInterface({
             .map(m => ({ role: m.role, content: m.content }))
             .concat({ role: 'user', content: content.trim() });
 
+        // ... rest of function ...
         try {
             abortControllerRef.current = new AbortController();
 
@@ -329,12 +300,30 @@ export default function ChatInterface({
     };
 
     const handleViewReport = () => {
-        if (onComplete && reportResult) {
-            onComplete(reportResult);
-        } else if (assessmentId) {
-            // Fallback just in case
+        if (assessmentId) {
             router.push(`/report/${assessmentId}`);
         }
+    };
+
+    const handleRegenerate = async () => {
+        if (isLoading) return;
+
+        // Block regeneration if we already have a valid report result to prevent accidents
+        // unless the user explicitly cleared it (which we don't support yet, but good safety)
+        if (reportResult) {
+            const confirmRegen = window.confirm(
+                language === 'zh'
+                    ? '已有生成好的报告。确定要重新生成吗？这将覆盖现有结果。'
+                    : 'Report already exists. Are you sure you want to regenerate? This will overwrite the current result.'
+            );
+            if (!confirmRegen) return;
+        }
+
+        const regeneratePrompt = language === 'zh'
+            ? "请基于我们之前的全部对话，重新深度分析并生成我的 Human 3.0 评估报告。请确保包含完整的 [ASSESSMENT_COMPLETE] 标记和 JSON 结果。"
+            : "Please re-analyze our entire conversation and regenerate my Human 3.0 assessment report. Ensure to include the full [ASSESSMENT_COMPLETE] marker and JSON result.";
+
+        await sendMessage(regeneratePrompt);
     };
 
     return (
@@ -345,6 +334,27 @@ export default function ChatInterface({
                     currentQuadrant={currentQuadrant}
                     completedQuadrants={completedQuadrants}
                 />
+
+                {/* 报告入口和重生成操作 */}
+                {completedQuadrants.length === 4 && !!reportResult && (
+                    <div className="flex flex-wrap items-center justify-center gap-3 mt-6 animate-slide-up">
+                        <Link
+                            href={`/report/${assessmentId}`}
+                            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[var(--accent-primary)] to-[#FF4D4D] text-white rounded-full text-sm font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all active:scale-95"
+                        >
+                            <LayoutDashboard className="w-4 h-4" />
+                            {t('assess.viewReport')}
+                        </Link>
+                        <button
+                            onClick={handleRegenerate}
+                            disabled={isLoading}
+                            className="flex items-center gap-2 px-5 py-2.5 bg-white/80 backdrop-blur-sm border border-[var(--border-subtle)] text-[var(--text-secondary)] rounded-full text-sm font-bold shadow-sm hover:bg-white hover:text-[var(--accent-primary)] transition-all active:scale-95 disabled:opacity-50"
+                        >
+                            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                            {t('assess.regenerateReport')}
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* 消息列表 - 可滚动区域 */}
@@ -391,18 +401,12 @@ export default function ChatInterface({
 
             {/* 输入框 - 浮动并具备玻璃拟态 */}
             <div className="flex-shrink-0 px-6 py-10">
-                {isLoading && completedQuadrants.length >= 4 ? (
-                    <div className="flex items-center justify-center p-4 text-[var(--text-secondary)] italic animate-pulse">
-                        {language === 'zh' ? '正在生成最终报告...' : 'Finalizing Report...'}
-                    </div>
-                ) : (
-                    <ChatInput
-                        onSend={sendMessage}
-                        onStop={handleStop}
-                        isLoading={isLoading}
-                        placeholder={language === 'zh' ? `输入关于${QuadrantLabels[currentQuadrant]}的见解...` : `Share insights on ${currentQuadrant}...`}
-                    />
-                )}
+                <ChatInput
+                    onSend={sendMessage}
+                    onStop={handleStop}
+                    isLoading={isLoading}
+                    placeholder={language === 'zh' ? `输入关于${QuadrantLabels[currentQuadrant]}的见解...` : `Share insights on ${currentQuadrant}...`}
+                />
             </div>
 
             {/* Long Generation Timeout Dialog */}

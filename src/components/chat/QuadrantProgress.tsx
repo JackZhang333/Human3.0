@@ -1,7 +1,6 @@
 'use client';
 
-import { Quadrant, QuadrantLabels } from '@/lib/types';
-import { QUADRANT_ORDER } from '@/lib/prompts';
+import { Quadrant, QuadrantLabels, QUADRANT_ORDER } from '@/lib/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface QuadrantProgressProps {

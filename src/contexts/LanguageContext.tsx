@@ -169,6 +169,8 @@ const translations = {
             active: '进行中',
             pending: '待开始',
             keyboardHint: '按 Enter 发送，Shift + Enter 换行',
+            viewReport: '查看完整报告',
+            regenerateReport: '重新分析并更新报告',
         },
         report: {
             title: '评估报告',
@@ -318,6 +320,8 @@ const translations = {
             active: 'Active',
             pending: 'Pending',
             keyboardHint: 'Press Enter to send, Shift + Enter for new line',
+            viewReport: 'View Full Report',
+            regenerateReport: 'Re-analyze & Update Report',
         },
         report: {
             title: 'Assessment Report',
