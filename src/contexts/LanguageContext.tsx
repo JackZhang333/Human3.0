@@ -198,6 +198,8 @@ const translations = {
             completed: '已完成',
             inProgress: '进行中',
             continue: '继续评估',
+            regenerateConfirm: '选择模型重新生成报告',
+            selectModel: '选择模型',
         },
         common: {
             loading: '加载中...',
@@ -349,6 +351,8 @@ const translations = {
             completed: 'Completed',
             inProgress: 'In Progress',
             continue: 'Continue Assessment',
+            regenerateConfirm: 'Select a model to regenerate the report',
+            selectModel: 'Select Model',
         },
         common: {
             loading: 'Loading...',

@@ -16,6 +16,9 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 function LoginForm() {
     const { t, language } = useLanguage();
@@ -53,7 +56,7 @@ function LoginForm() {
                     email,
                     password,
                     options: {
-                        emailRedirectTo: `${window.location.origin}/auth/callback?redirect=${redirect}`,
+                        emailRedirectTo: `${window.location.origin}/auth/callback?code=${email}&redirect=${redirect}`,
                     },
                 });
 
@@ -96,25 +99,26 @@ function LoginForm() {
     };
 
     return (
-        <div className="relative z-10 w-full max-w-sm sm:max-w-md">
-            <div className="glass p-8 rounded-2xl border border-[var(--border-subtle)] shadow-xl backdrop-blur-xl">
-                <div className="text-center mb-8">
-                    <h1 className="text-2xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)]">
+        <div className="relative z-10 w-full max-w-[92vw] sm:max-w-md animate-slide-up">
+            <div className="bg-white/70 backdrop-blur-2xl p-6 sm:p-10 rounded-3xl border border-[var(--border-subtle)] shadow-2xl shadow-blue-500/5">
+                <div className="text-center mb-8 sm:mb-10">
+                    <h1 className="text-3xl sm:text-4xl font-black mb-3 tracking-tight text-[var(--text-primary)]">
                         {mode === 'login' ? t('login.welcomeBack') : t('login.createAccount')}
                     </h1>
-                    <p className="text-[var(--text-secondary)] text-sm">
+                    <p className="text-[var(--text-secondary)] font-medium">
                         {mode === 'login' ? t('login.loginSubtitle') : t('login.signupSubtitle')}
                     </p>
                 </div>
 
                 {/* Google 登录 */}
-                <button
+                <Button
+                    variant="outline"
                     onClick={handleGoogleLogin}
                     disabled={loading}
-                    className="w-full btn-secondary !flex items-center justify-center gap-3 mb-6 group hover:bg-[var(--surface-hover)] transition-all duration-300"
+                    className="w-full h-12 rounded-2xl gap-3 mb-8 border-2 hover:bg-[var(--bg-subtle)] group font-bold"
                 >
                     {loading ? (
-                        <Loader2 className="w-5 h-5 animate-spin text-[var(--text-muted)]" />
+                        <Loader2 className="w-5 h-5 animate-spin" />
                     ) : (
                         <svg className="w-5 h-5 transition-transform group-hover:scale-110" viewBox="0 0 24 24">
                             <path
@@ -135,194 +139,167 @@ function LoginForm() {
                             />
                         </svg>
                     )}
-                    <span className="font-medium text-[var(--text-primary)]">
-                        {mode === 'login' ? t('login.googleLogin') : t('login.googleSignup')}
-                    </span>
-                </button>
+                    {mode === 'login' ? t('login.googleLogin') : t('login.googleSignup')}
+                </Button>
 
-                <div className="flex items-center gap-4 mb-6">
+                <div className="flex items-center gap-4 mb-8">
                     <div className="flex-1 h-px bg-[var(--border-subtle)]" />
-                    <span className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">{t('login.orEmail')}</span>
+                    <span className="text-[10px] font-black text-[var(--text-tertiary)] uppercase tracking-[0.2em]">{t('login.orEmail')}</span>
                     <div className="flex-1 h-px bg-[var(--border-subtle)]" />
                 </div>
 
                 {/* 表单 */}
-                <form onSubmit={handleSubmit} className="space-y-5">
-                    <div className="space-y-1.5">
-                        <label htmlFor="email" className="block text-xs font-medium text-[var(--text-secondary)] ml-1">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="space-y-2">
+                        <Label htmlFor="email" className="font-bold text-xs uppercase tracking-widest ml-1 text-[var(--text-secondary)]">
                             {t('login.emailLabel')}
-                        </label>
-                        <div className="relative group">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Mail className="h-5 w-5 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" />
-                            </div>
-                            <input
+                        </Label>
+                        <div className="relative">
+                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-tertiary)] pointer-events-none" />
+                            <Input
                                 id="email"
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 placeholder={t('login.emailPlaceholder')}
-                                className="input !pl-10 transition-all duration-300 border-[var(--border-subtle)] focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]"
+                                className="pl-12 h-12 rounded-2xl bg-[var(--bg-subtle)]/50 border-transparent focus:bg-white"
                                 required
                             />
                         </div>
                     </div>
 
-                    <div className="space-y-1.5">
-                        <label htmlFor="password" className="block text-xs font-medium text-[var(--text-secondary)] ml-1">
+                    <div className="space-y-2">
+                        <Label htmlFor="password" className="font-bold text-xs uppercase tracking-widest ml-1 text-[var(--text-secondary)]">
                             {t('login.passwordLabel')}
-                        </label>
-                        <div className="relative group">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Lock className="h-5 w-5 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" />
-                            </div>
-                            <input
+                        </Label>
+                        <div className="relative">
+                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-tertiary)] pointer-events-none" />
+                            <Input
                                 id="password"
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder={t('login.passwordPlaceholder')}
-                                className="input !pl-10 transition-all duration-300 border-[var(--border-subtle)] focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]"
+                                className="pl-12 h-12 rounded-2xl bg-[var(--bg-subtle)]/50 border-transparent focus:bg-white"
                                 required
                                 minLength={6}
                             />
                         </div>
                     </div>
 
-                    {/* Agree Terms Checkbox (Only for Signup) */}
                     {mode === 'signup' && (
-                        <div className="flex items-start gap-2 pt-1">
-                            <div className="flex items-center h-5">
-                                <input
-                                    id="agree_terms"
-                                    type="checkbox"
-                                    checked={agree}
-                                    onChange={(e) => setAgree(e.target.checked)}
-                                    className="w-4 h-4 rounded border-[var(--border-subtle)] text-[var(--primary)] focus:ring-[var(--primary)] bg-[var(--surface)]"
-                                    required
-                                />
-                            </div>
-                            <label htmlFor="agree_terms" className="text-xs text-[var(--text-secondary)] leading-tight cursor-pointer select-none">
+                        <div className="flex items-start gap-3 px-1 pt-1">
+                            <input
+                                id="agree_terms"
+                                type="checkbox"
+                                checked={agree}
+                                onChange={(e) => setAgree(e.target.checked)}
+                                className="mt-1 w-4 h-4 rounded border-[var(--border-subtle)] text-[var(--accent-primary)] focus:ring-[var(--accent-primary)] accent-[var(--accent-primary)]"
+                                required
+                            />
+                            <Label htmlFor="agree_terms" className="text-sm font-medium text-[var(--text-secondary)] leading-snug cursor-pointer">
                                 {t('login.agreeTerms') || 'I agree to the'}{' '}
-                                <Link href="/terms" className="text-[var(--primary)] hover:underline" target="_blank">
-                                    {t('login.terms') || 'Terms of Service'}
+                                <Link href="/terms" className="text-[var(--accent-primary)] hover:underline font-bold" target="_blank">
+                                    {t('login.terms') || 'Terms'}
                                 </Link>
-                                {' '}{t('login.and') || 'and'}{' '}
-                                <Link href="/privacy" className="text-[var(--primary)] hover:underline" target="_blank">
-                                    {t('login.privacy') || 'Privacy Policy'}
+                                {' '}{t('login.and') || '&'}{' '}
+                                <Link href="/privacy" className="text-[var(--accent-primary)] hover:underline font-bold" target="_blank">
+                                    {t('login.privacy') || 'Privacy'}
                                 </Link>
-                            </label>
+                            </Label>
                         </div>
                     )}
 
                     {error && (
-                        <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm flex items-start gap-2 animate-in slide-in-from-top-2 fade-in">
-                            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                        <div className="p-4 rounded-2xl bg-red-50 text-red-600 text-sm font-bold flex items-center gap-3 animate-slide-up">
+                            <AlertCircle className="w-5 h-5 flex-shrink-0" />
                             <span>{error}</span>
                         </div>
                     )}
 
                     {message && (
-                        <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-green-500 text-sm flex items-start gap-2 animate-in slide-in-from-top-2 fade-in">
-                            <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                        <div className="p-4 rounded-2xl bg-green-50 text-green-600 text-sm font-bold flex items-center gap-3 animate-slide-up">
+                            <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
                             <span>{message}</span>
                         </div>
                     )}
 
-                    <button
+                    <Button
                         type="submit"
                         disabled={loading}
-                        className="w-full btn-primary group relative overflow-hidden"
+                        className="w-full h-14 rounded-2xl text-lg font-black shadow-xl shadow-[var(--accent-primary)]/20 active:scale-[0.98] transition-all"
                     >
-                        <div className="flex items-center justify-center gap-2 relative z-10 py-1">
-                            {loading ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                    <span>{t('login.processing')}</span>
-                                </>
-                            ) : (
-                                <>
-                                    <span>{mode === 'login' ? t('login.loginButton') : t('login.signupButton')}</span>
-                                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                                </>
-                            )}
-                        </div>
-                    </button>
-
-                    {/* Disclaimer for Login */}
-                    {mode === 'login' && (
-                        <p className="text-[10px] text-center text-[var(--text-muted)] mt-2">
-                            {t('login.loginDisclaimer') || 'By logging in, you agree to our Terms and Privacy Policy'}
-                        </p>
-                    )}
+                        {loading ? (
+                            <Loader2 className="w-6 h-6 animate-spin" />
+                        ) : (
+                            <>
+                                {mode === 'login' ? t('login.loginButton') : t('login.signupButton')}
+                                <ArrowRight className="w-5 h-5 ml-2" />
+                            </>
+                        )}
+                    </Button>
                 </form>
 
-                {/* 切换模式 */}
-                <div className="text-center mt-8 text-sm text-[var(--text-secondary)] bg-[var(--bg-subtle)]/50 mx-[-2rem] mb-[-2rem] py-4 rounded-b-2xl border-t border-[var(--border-subtle)]">
+                <div className="text-center mt-10 text-sm">
                     {mode === 'login' ? (
-                        <>
+                        <p className="text-[var(--text-secondary)] font-medium">
                             {t('login.noAccount')}{' '}
                             <button
-                                onClick={() => {
-                                    setMode('signup');
-                                    setError(null);
-                                    setMessage(null);
-                                }}
-                                className="text-[var(--primary)] hover:text-[var(--primary-hover)] font-semibold transition-colors hover:underline"
+                                onClick={() => setMode('signup')}
+                                className="text-[var(--accent-primary)] font-black hover:underline"
                             >
                                 {t('login.signupLink')}
                             </button>
-                        </>
+                        </p>
                     ) : (
-                        <>
+                        <p className="text-[var(--text-secondary)] font-medium">
                             {t('login.hasAccount')}{' '}
                             <button
-                                onClick={() => {
-                                    setMode('login');
-                                    setError(null);
-                                    setMessage(null);
-                                }}
-                                className="text-[var(--primary)] hover:text-[var(--primary-hover)] font-semibold transition-colors hover:underline"
+                                onClick={() => setMode('login')}
+                                className="text-[var(--accent-primary)] font-black hover:underline"
                             >
                                 {t('login.loginLink')}
                             </button>
-                        </>
+                        </p>
                     )}
                 </div>
             </div>
 
-            {/* 注册成功弹窗 */}
             <AlertDialog open={showSignupSuccess} onOpenChange={setShowSignupSuccess}>
-                <AlertDialogContent>
+                <AlertDialogContent className="rounded-3xl max-w-md">
                     <AlertDialogHeader>
-                        <AlertDialogTitle className="flex items-center gap-2">
-                            <CheckCircle2 className="w-5 h-5 text-green-500" />
-                            {t('login.signupSuccessTitle') || 'Registration Successful'}
+                        <AlertDialogTitle className="flex items-center gap-3 text-2xl font-black">
+                            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                                <CheckCircle2 className="w-6 h-6 text-green-600" />
+                            </div>
+                            {t('login.signupSuccessTitle') || 'Success!'}
                         </AlertDialogTitle>
-                        <AlertDialogDescription>
-                            {t('login.signupSuccessDesc') || 'Please check your email to activate your account before logging in.'}
+                        <AlertDialogDescription className="text-base font-medium pt-2">
+                            {t('login.signupSuccessDesc') || 'Check your email to activate your account.'}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
+                    <AlertDialogFooter className="mt-8">
                         <AlertDialogAction
                             onClick={() => {
                                 setShowSignupSuccess(false);
                                 setMode('login');
                             }}
+                            asChild
                         >
-                            {t('common.ok') || 'OK'}
+                            <Button className="rounded-2xl min-w-24">
+                                {t('common.ok') || 'Got it'}
+                            </Button>
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
 
-            {/* Footer Links */}
-            <div className="mt-8 text-center text-xs text-[var(--text-muted)] flex gap-4 justify-center">
-                <Link href="/privacy" className="hover:text-[var(--text-primary)] transition-colors">
-                    {t('privacy') || (t('login.welcomeBack') === '欢迎回来' ? '隐私政策' : 'Privacy Policy')}
+            <div className="mt-10 text-center flex gap-6 justify-center">
+                <Link href="/privacy" className="text-xs font-black uppercase tracking-widest text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors">
+                    {t('privacy') || 'Privacy'}
                 </Link>
-                <Link href="/terms" className="hover:text-[var(--text-primary)] transition-colors">
-                    {t('terms') || (t('login.welcomeBack') === '欢迎回来' ? '服务条款' : 'Terms of Service')}
+                <Link href="/terms" className="text-xs font-black uppercase tracking-widest text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors">
+                    {t('terms') || 'Terms'}
                 </Link>
             </div>
         </div>
@@ -332,38 +309,43 @@ function LoginForm() {
 function LoginLoadingFallback() {
     const { t } = useLanguage();
     return (
-        <div className="glass p-12 rounded-2xl w-full max-w-md text-center flex flex-col items-center justify-center min-h-[400px]">
-            <Loader2 className="w-10 h-10 animate-spin text-[var(--primary)] mb-4" />
-            <p className="text-[var(--text-secondary)]">{t('login.loading')}</p>
+        <div className="bg-white/70 backdrop-blur-2xl p-12 rounded-3xl w-full max-w-md text-center flex flex-col items-center justify-center min-h-[400px]">
+            <Loader2 className="w-12 h-12 animate-spin text-[var(--accent-primary)] mb-6" />
+            <p className="text-lg font-bold text-[var(--text-secondary)]">{t('login.loading')}</p>
         </div>
     );
 }
 
 export default function LoginPage() {
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 relative overflow-hidden">
-            {/* 背景装饰 - 使用 CSS 变量以支持暗色模式 */}
-            <div className="fixed inset-0 pointer-events-none">
-                <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[100px]" />
-                <div className="absolute bottom-[-10%] left-[-5%] w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[100px]" />
+        <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12 relative bg-[var(--bg-primary)] overflow-hidden">
+            {/* Immersive Background Decorations */}
+            <div className="fixed inset-0 pointer-events-none overflow-hidden">
+                <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-[var(--accent-primary)]/5 rounded-full blur-[120px] animate-pulse" />
+                <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-[120px] animate-pulse" />
             </div>
 
-            {/* Language Switcher */}
-            <div className="absolute top-6 right-6 z-20">
+            <div className="absolute top-8 right-8 z-30">
                 <LanguageSwitcher />
             </div>
 
-            {/* Logo */}
-            <Link href="/" className="relative z-10 flex flex-col items-center gap-4 mb-10 group">
-                <div className="relative">
-                    <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/20 to-purple-500/20 rounded-full blur-xl group-hover:blur-2xl transition-all duration-500 opacity-50" />
-                    <img src="/logo.png" alt="Human 3.0" className="h-16 w-auto relative z-10 drop-shadow-sm" />
+            <Link href="/" className="relative z-20 mb-12 hover:scale-105 transition-transform duration-500">
+                <div className="relative p-4">
+                    <div className="absolute inset-0 bg-white/20 blur-xl rounded-full" />
+                    <img src="/logo.png" alt="Human 3.0" className="h-16 w-auto relative z-10" />
                 </div>
             </Link>
 
             <Suspense fallback={<LoginLoadingFallback />}>
                 <LoginForm />
             </Suspense>
+
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10">
+                <p className="text-[10px] font-black tracking-widest text-[var(--text-tertiary)] uppercase whitespace-nowrap">
+                    Human 3.0 Operating System • Evolution Protocol
+                </p>
+            </div>
         </div>
     );
 }
+

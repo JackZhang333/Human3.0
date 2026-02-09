@@ -13,43 +13,65 @@ export default function GlitchAndWarnings({ result }: GlitchAndWarningsProps) {
 
     return (
         <>
-            {/* Glitch 评估 */}
-            <section className="card mb-8">
-                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                    <span
-                        className="w-8 h-8 rounded-lg flex items-center justify-center bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400"
-                    >
-                        <Zap className="w-5 h-5" />
-                    </span>
-                    {language === 'zh' ? 'Glitch 评估' : 'Glitch Assessment'}
-                </h2>
-                <div className="prose prose-sm max-w-none text-[var(--text-secondary)]">
-                    <p className="whitespace-pre-line leading-relaxed">
-                        {result.glitchAssessment}
-                    </p>
-                </div>
-            </section>
+            {/* Glitch Assessment */}
+            {result.glitchAssessment && (
+                <section className="mb-12">
+                    <div className="card relative overflow-hidden lg:p-10">
+                        {/* Background decoration */}
+                        <div className="absolute top-0 right-0 w-80 h-80 bg-[var(--quadrant-mind)] opacity-[0.03] rounded-full blur-3xl transform translate-x-1/3 -translate-y-1/3 pointer-events-none" />
 
-            {/* 关键警告 */}
+                        <div className="relative z-10">
+                            {/* Section Header */}
+                            <div className="flex items-center gap-3 mb-8">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--quadrant-mind)]/20 to-[var(--quadrant-mind)]/5 flex items-center justify-center">
+                                    <Zap className="w-5 h-5 text-[var(--quadrant-mind)]" />
+                                </div>
+                                <div>
+                                    <p className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-[0.15em]">
+                                        {language === 'zh' ? '系统诊断' : 'System Diagnosis'}
+                                    </p>
+                                    <h2 className="text-xl font-semibold text-[var(--text-primary)]">
+                                        {language === 'zh' ? 'Glitch 评估' : 'Glitch Assessment'}
+                                    </h2>
+                                </div>
+                            </div>
+
+                            {/* Content */}
+                            <div className="prose prose-sm lg:prose-base max-w-none text-[var(--text-secondary)] leading-relaxed whitespace-pre-line lg:text-lg">
+                                {result.glitchAssessment}
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            )}
+
+            {/* Critical Warnings */}
             {result.criticalWarnings && result.criticalWarnings.length > 0 && (
-                <section className="mb-8">
-                    <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                        <span
-                            className="w-8 h-8 rounded-lg flex items-center justify-center bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-                        >
-                            <AlertTriangle className="w-5 h-5" />
-                        </span>
-                        {language === 'zh' ? '关键警告' : 'Critical Warnings'}
-                    </h2>
-                    <div className="space-y-3">
+                <section className="mb-12">
+                    {/* Section Header */}
+                    <div className="flex items-center gap-3 mb-8">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--error)]/20 to-[var(--error)]/5 flex items-center justify-center">
+                            <AlertTriangle className="w-5 h-5 text-[var(--error)]" />
+                        </div>
+                        <div>
+                            <p className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-[0.15em]">
+                                {language === 'zh' ? '重要提醒' : 'Important Reminders'}
+                            </p>
+                            <h2 className="text-xl font-semibold text-[var(--text-primary)]">
+                                {language === 'zh' ? '关键警告' : 'Critical Warnings'}
+                            </h2>
+                        </div>
+                    </div>
+
+                    <div className="space-y-6">
                         {result.criticalWarnings.map((warning, i) => (
                             <div
                                 key={i}
-                                className="p-4 rounded-xl border bg-red-50 border-red-100 dark:bg-red-900/10 dark:border-red-800/30"
+                                className="p-6 lg:p-8 rounded-xl bg-[var(--error-subtle)] border border-[var(--error)]/10"
                             >
-                                <div className="flex items-start gap-3">
-                                    <span className="text-red-500 mt-0.5">!</span>
-                                    <p className="text-sm text-red-700 dark:text-red-300 leading-relaxed">{warning}</p>
+                                <div className="flex items-start gap-4">
+                                    <span className="text-[var(--error)] text-xl flex-shrink-0">⚠</span>
+                                    <p className="text-[var(--error)]/90 leading-relaxed lg:text-lg">{warning}</p>
                                 </div>
                             </div>
                         ))}

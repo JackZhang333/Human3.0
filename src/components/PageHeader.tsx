@@ -13,16 +13,22 @@ export default function PageHeader({ title, actions }: PageHeaderProps) {
     const { t } = useLanguage();
 
     return (
-        <header className="relative z-10 px-4 py-3 border-b border-[var(--border)] bg-[var(--background)]/80 backdrop-blur-sm">
-            <div className="max-w-4xl mx-auto flex items-center justify-between">
+        <header className="px-4 sm:px-6 py-4 border-b border-[var(--border-subtle)] bg-[var(--glass-bg)] backdrop-blur-xl sticky top-0 z-50">
+            <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
                 {/* Left: Logo + Title + Language Switcher */}
-                <div className="flex items-center gap-4">
-                    <Link href="/" className="flex items-center gap-2">
-                        <img src="/logo.png" alt="Human 3.0" className="h-8 w-auto" />
+                <div className="flex items-center gap-3 sm:gap-6">
+                    <Link href="/" className="flex items-center gap-2.5 group">
+                        <div className="relative">
+                            <div className="absolute inset-0 bg-[var(--accent-primary)]/10 blur-lg rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            <img src="/logo.png" alt="Human 3.0" className="h-8 w-auto relative z-10 transition-transform duration-300 group-hover:scale-105" />
+                        </div>
                         {title && (
-                            <span className="font-semibold hidden sm:inline">{title}</span>
+                            <span className="text-lg font-semibold tracking-tight text-[var(--text-primary)] hidden md:inline">
+                                {title}
+                            </span>
                         )}
                     </Link>
+                    <div className="h-5 w-px bg-[var(--border-subtle)] hidden sm:block" />
                     <LanguageSwitcher />
                 </div>
 

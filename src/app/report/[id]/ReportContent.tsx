@@ -1,11 +1,12 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { MessageCircle } from 'lucide-react';
+import { MessageCircle, FileDown } from 'lucide-react';
 import { AssessmentResult } from '@/lib/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 import PageHeader from '@/components/PageHeader';
+import { Button } from '@/components/ui/button';
 
 // Import new modular components
 import ReportHeader from '@/components/report/ReportHeader';
@@ -17,6 +18,7 @@ import CoreProblem from '@/components/report/CoreProblem';
 import TransformationStrategies from '@/components/report/TransformationStrategies';
 import GlitchAndWarnings from '@/components/report/GlitchAndWarnings';
 import NextSteps from '@/components/report/NextSteps';
+import { ReportNavigation } from '@/components/report/ReportNavigation';
 
 interface ReportContentProps {
     assessment: {
@@ -29,8 +31,31 @@ interface ReportContentProps {
 export default function ReportContent({ assessment }: ReportContentProps) {
     const { t, language } = useLanguage();
     const reportRef = useRef<HTMLDivElement>(null);
+    const [activeSection, setActiveSection] = useState('overview');
     const result = (assessment.result || {}) as Partial<AssessmentResult>;
     const quadrants = Array.isArray(result.quadrants) ? result.quadrants : [];
+
+    // Track scroll position for navigation
+    useEffect(() => {
+        const handleScroll = () => {
+            const sections = ['overview', 'archetype', 'analysis', 'dynamics', 'problem', 'strategies', 'warnings', 'next-steps'];
+            const scrollPosition = window.scrollY + 200;
+
+            for (const section of sections) {
+                const element = document.getElementById(section);
+                if (element) {
+                    const { offsetTop, offsetHeight } = element;
+                    if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
+                        setActiveSection(section);
+                        break;
+                    }
+                }
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     // 辅助函数：将任意颜色格式转换为 RGB
     const convertColorToRGB = (color: string): string | null => {
@@ -43,15 +68,15 @@ export default function ReportContent({ assessment }: ReportContentProps) {
             return color;
         }
 
-        // 只有包含现代颜色函数或 CSS 变量时才尝试处理
-        if (color.includes('lab') || color.includes('lch') || color.includes('oklab') || color.includes('oklch')) {
+        // 只有包含现代颜色函数时才尝试处理
+        if (color.includes('lab') || color.includes('lch')) {
             try {
                 const canvas = document.createElement('canvas');
                 canvas.width = 1;
                 canvas.height = 1;
                 const ctx = canvas.getContext('2d');
                 if (ctx) {
-                    ctx.fillStyle = color;
+                    ctx.fillStyle = color.trim();
                     ctx.fillRect(0, 0, 1, 1);
                     const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
                     return a === 255 ? `rgb(${r}, ${g}, ${b})` : `rgba(${r}, ${g}, ${b}, ${a / 255})`;
@@ -63,6 +88,18 @@ export default function ReportContent({ assessment }: ReportContentProps) {
         }
 
         return null;
+    };
+
+    // 辅助函数：处理复合样式值（如 gradient），替换其中的现代颜色函数为 RGB
+    const processStyleValue = (value: string): string => {
+        if (!value) return value;
+        if (!value.includes('lab') && !value.includes('lch')) return value;
+
+        // 匹配 lab, lch, oklab, oklch 函数及其参数
+        return value.replace(/(okl)?(ab|ch)\([^)]+\)/g, (match) => {
+            const rgb = convertColorToRGB(match);
+            return rgb || match;
+        });
     };
 
     const handleExportPDF = async () => {
@@ -87,15 +124,15 @@ export default function ReportContent({ assessment }: ReportContentProps) {
                 const props = [
                     'color', 'background-color', 'border-color', 'fill', 'stroke',
                     'stop-color', 'outline-color', 'flood-color', 'lighting-color',
-                    'text-decoration-color'
+                    'text-decoration-color', 'background-image', 'background'
                 ];
 
                 props.forEach(prop => {
                     const val = style.getPropertyValue(prop);
                     if (val && (val.includes('lab') || val.includes('lch'))) {
-                        const rgb = convertColorToRGB(val);
-                        if (rgb) {
-                            (el as HTMLElement).style.setProperty(prop, rgb, 'important');
+                        const processed = processStyleValue(val);
+                        if (processed !== val) {
+                            (el as HTMLElement).style.setProperty(prop, processed, 'important');
                         }
                     }
                 });
@@ -109,8 +146,8 @@ export default function ReportContent({ assessment }: ReportContentProps) {
                         if (val) {
                             savedAttrs.push({ name: attr, value: val });
                             if (val.includes('lab') || val.includes('lch')) {
-                                const rgb = convertColorToRGB(val);
-                                if (rgb) el.setAttribute(attr, rgb);
+                                const processed = processStyleValue(val);
+                                if (processed !== val) el.setAttribute(attr, processed);
                             }
                         }
                     });
@@ -149,18 +186,18 @@ export default function ReportContent({ assessment }: ReportContentProps) {
                     style.innerHTML = `
                         * { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
                         .blur-3xl, .blur-2xl, .blur-xl { filter: none !important; }
-                        .glass { 
-                            backdrop-filter: none !important; 
-                            -webkit-backdrop-filter: none !important; 
-                            background: rgba(255, 255, 255, 0.9) !important; 
+                        .glass {
+                            backdrop-filter: none !important;
+                            -webkit-backdrop-filter: none !important;
+                            background: rgba(255, 255, 255, 0.9) !important;
                         }
                         .recharts-responsive-container { width: 400px !important; height: 320px !important; }
                         :root {
-                            --bg-primary: #FAFAFA !important;
+                            --bg-primary: #FDFCFA !important;
                             --bg-secondary: #FFFFFF !important;
-                            --text-primary: #1A1A1A !important;
-                            --text-secondary: #666666 !important;
-                            --text-tertiary: #999999 !important;
+                            --text-primary: #1C1917 !important;
+                            --text-secondary: #57534E !important;
+                            --text-tertiary: #A8A29E !important;
                         }
                     `;
                     clonedDoc.head.appendChild(style);
@@ -183,13 +220,28 @@ export default function ReportContent({ assessment }: ReportContentProps) {
         <div className="min-h-screen pb-24 bg-[var(--bg-primary)]">
             {/* 背景装饰 - 导出 PDF 时忽略 */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none" data-html2canvas-ignore="true">
+                {/* Top right warm glow */}
                 <div
-                    className="absolute -top-40 -right-40 w-96 h-96 rounded-full blur-3xl opacity-50 mix-blend-multiply"
-                    style={{ backgroundColor: 'var(--accent-subtle)' }}
+                    className="absolute -top-60 -right-60 w-[600px] h-[600px] rounded-full opacity-[0.03]"
+                    style={{
+                        background: 'radial-gradient(circle, var(--quadrant-spirit) 0%, transparent 70%)',
+                        filter: 'blur(80px)'
+                    }}
                 />
+                {/* Bottom left cool glow */}
                 <div
-                    className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full blur-3xl opacity-50 mix-blend-multiply"
-                    style={{ backgroundColor: 'rgb(219 234 254)' }} /* blue-100 */
+                    className="absolute -bottom-60 -left-60 w-[600px] h-[600px] rounded-full opacity-[0.03]"
+                    style={{
+                        background: 'radial-gradient(circle, var(--quadrant-mind) 0%, transparent 70%)',
+                        filter: 'blur(80px)'
+                    }}
+                />
+                {/* Subtle noise texture overlay */}
+                <div
+                    className="absolute inset-0 opacity-[0.015]"
+                    style={{
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+                    }}
                 />
             </div>
 
@@ -197,54 +249,82 @@ export default function ReportContent({ assessment }: ReportContentProps) {
             <PageHeader
                 title={t('report.title')}
                 actions={
-                    <>
+                    <div className="flex items-center gap-2 sm:gap-3">
                         <Link
                             href={`/assess?id=${assessment.id}`}
-                            className="bg-[var(--accent-subtle)] text-[var(--accent-primary)] hover:bg-[var(--accent-primary)] hover:text-white px-4 py-2 rounded-full transition-all flex items-center gap-2 group shadow-sm hover:shadow-md text-sm font-semibold"
+                            className="btn-ghost h-9 px-3 sm:px-4 text-sm"
                         >
-                            <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                            {language === 'zh' ? '继续聊天' : 'Continue Chatting'}
+                            <MessageCircle className="w-4 h-4" />
+                            <span className="hidden sm:inline">
+                                {language === 'zh' ? '继续对话' : 'Continue'}
+                            </span>
                         </Link>
-                        <button
+                        <Button
+                            variant="outline"
+                            size="sm"
                             onClick={handleExportPDF}
-                            className="btn-secondary text-sm py-2 px-4 shadow-sm hover:shadow transition-all bg-white/80 backdrop-blur-sm border border-[var(--border-subtle)]"
+                            className="h-9 px-3 sm:px-4 rounded-md bg-white border-[var(--border-subtle)] hover:border-[var(--border-primary)] hover:bg-[var(--bg-subtle)] text-sm font-medium"
                         >
-                            {language === 'zh' ? '导出 PDF' : 'Export PDF'}
-                        </button>
-                    </>
+                            <FileDown className="w-4 h-4 sm:mr-1.5" />
+                            <span className="hidden sm:inline">
+                                {language === 'zh' ? '导出 PDF' : 'Export PDF'}
+                            </span>
+                        </Button>
+                    </div>
                 }
             />
 
-            {/* 报告内容 */}
-            <main ref={reportRef} className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 py-8">
+            {/* Side Navigation */}
+            <ReportNavigation activeSection={activeSection} />
 
-                <ReportHeader assessment={assessment} result={result} />
+            {/* 报告内容 */}
+            <main ref={reportRef} className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:pr-72 py-8 sm:py-12">
+
+                <div id="overview" className="scroll-mt-24">
+                    <ReportHeader assessment={assessment} result={result} />
+                </div>
 
                 {result.lifestyleArchetype && (
-                    <LifestyleArchetype result={result} />
+                    <div id="archetype" className="scroll-mt-24">
+                        <LifestyleArchetype result={result} />
+                    </div>
                 )}
 
-                <RadarChartSection quadrants={quadrants} />
+                <div id="analysis" className="scroll-mt-24">
+                    <RadarChartSection quadrants={quadrants} />
+                    <QuadrantAnalysis quadrants={quadrants} />
+                </div>
 
-                <QuadrantAnalysis quadrants={quadrants} />
+                <div id="dynamics" className="scroll-mt-24">
+                    <CrossQuadrantDynamics result={result} />
+                </div>
 
-                <CrossQuadrantDynamics result={result} />
+                <div id="problem" className="scroll-mt-24">
+                    <CoreProblem result={result} />
+                </div>
 
-                <CoreProblem result={result} />
+                <div id="strategies" className="scroll-mt-24">
+                    <TransformationStrategies result={result} />
+                </div>
 
-                <TransformationStrategies result={result} />
+                <div id="warnings" className="scroll-mt-24">
+                    <GlitchAndWarnings result={result} />
+                </div>
 
-                <GlitchAndWarnings result={result} />
-
-                <NextSteps result={result} />
+                <div id="next-steps" className="scroll-mt-24">
+                    <NextSteps result={result} />
+                </div>
 
                 {/* PDF Footer Watermark */}
-                <div className="text-center mt-16 pt-8 border-t border-[var(--border-subtle)]">
-                    <p className="text-sm text-[var(--text-tertiary)] font-medium">
+                <div className="text-center mt-20 pt-12 border-t border-[var(--border-subtle)]">
+                    <p className="text-sm text-[var(--text-tertiary)] font-medium tracking-wide">
                         Human 3.0 Operating System
                     </p>
                     <p className="text-xs text-[var(--text-tertiary)] mt-1">
                         Metatype Assessment Report
+                    </p>
+                    <p className="text-xs text-[var(--text-muted)] mt-4">
+                        {new Date(assessment.created_at).toLocaleDateString(language === 'zh' ? 'zh-CN' : 'en-US')}
                     </p>
                 </div>
 

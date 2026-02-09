@@ -2,55 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getSystemPrompt } from '@/lib/prompts';
 import { extractAssessmentReport } from '@/lib/reportUtils';
-
-// MiniMax OpenAI-compatible API endpoint
-const MINIMAX_API_URL = 'https://api.minimaxi.com/v1/chat/completions';
-//Kimi API endpoint
-const KIMI_API_URL = 'https://api.moonshot.cn/v1/chat/completions';
+import { AIProviderFactory } from '@/lib/ai/factory';
 
 // 使用 Node.js Runtime 以支持完整的 Supabase 功能
 export const runtime = 'nodejs';
 export const maxDuration = 300; // 5分钟超时
-
-// 带重试的 fetch 函数
-async function fetchWithRetry(
-    url: string,
-    options: RequestInit,
-    maxRetries: number = 2
-): Promise<Response> {
-    let lastError: Error | null = null;
-
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
-        try {
-            const response = await fetch(url, options);
-
-            // 如果成功或者是非服务端错误，直接返回
-            if (response.ok || response.status < 500) {
-                return response;
-            }
-
-            // 服务端错误，继续重试
-            console.log(`API attempt ${attempt + 1} failed with status ${response.status}, retrying...`);
-            lastError = new Error(`HTTP ${response.status}`);
-
-        } catch (error) {
-            console.log(`API attempt ${attempt + 1} failed with error:`, error);
-            lastError = error instanceof Error ? error : new Error(String(error));
-        }
-
-        // 最后一次尝试失败，直接返回错误
-        if (attempt === maxRetries) {
-            break;
-        }
-
-        // 指数退避等待
-        const delay = Math.min(1000 * Math.pow(2, attempt), 5000);
-        console.log(`Waiting ${delay}ms before retry...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-    }
-
-    throw lastError || new Error('All retry attempts failed');
-}
 
 export async function POST(request: NextRequest) {
     try {
@@ -74,67 +30,40 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Determine AI provider and configuration
-        const provider = (process.env.AI_PROVIDER || 'minimax').toLowerCase();
-        let apiUrl = MINIMAX_API_URL;
-        let apiKey = process.env.MINIMAX_API_KEY;
-        let model = 'MiniMax-M2.1';
-
-        if (provider === 'kimi') {
-            apiUrl = KIMI_API_URL;
-            apiKey = process.env.KIMI_API_KEY;
-            model = 'kimi-k2.5';
-        }
-
-        if (!apiKey) {
-            return NextResponse.json(
-                { error: lang === 'en' ? 'AI service not configured' : `AI 服务 (${provider}) 未配置` },
-                { status: 500 }
-            );
-        }
+        // Get AI provider from factory
+        const provider = AIProviderFactory.getProvider();
 
         // Prepare messages with system prompt
         const apiMessages = [
-            { role: 'system', content: getSystemPrompt(lang as 'zh' | 'en') },
+            { role: 'system' as const, content: getSystemPrompt(lang as 'zh' | 'en') },
             ...messages.map((m: { role: string; content: string }) => ({
-                role: m.role,
+                role: m.role as 'user' | 'assistant',
                 content: m.content,
             })),
         ];
 
-        console.log(`Calling ${provider} API (${model}) with ${apiMessages.length} messages`);
+        console.log(`Calling ${provider.name} API via abstraction with ${apiMessages.length} messages`);
 
         // 创建超时控制器 (4分钟超时)
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 240000);
 
-        // Call AI API with streaming and retry (OpenAI-compatible format)
-        const response = await fetchWithRetry(apiUrl, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                model: model,
-                messages: apiMessages,
+        // Call AI provider with streaming
+        let streamResponse: ReadableStream;
+        try {
+            streamResponse = await provider.chatStream(apiMessages, {
                 stream: true,
-                max_tokens: provider === 'kimi' ? 32768 : 36398,
-                temperature: provider === 'kimi' ? 1 : 0.7,
-            }),
-            signal: controller.signal,
-        }, 2); // 最多重试 2 次
-
-        clearTimeout(timeoutId);
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error(`${provider} API error:`, errorText);
+                // Options are set by provider defaults, but can be overridden here if needed
+            });
+        } catch (error) {
+            console.error(`${provider.name} provider error:`, error);
             return NextResponse.json(
-                { error: `${provider} AI 服务暂时不可用，请稍后重试` },
+                { error: `${provider.name} AI 服务暂时不可用，请稍后重试` },
                 { status: 502 }
             );
         }
+
+        clearTimeout(timeoutId);
 
         // Transform SSE stream
         const encoder = new TextEncoder();
@@ -227,7 +156,7 @@ export async function POST(request: NextRequest) {
             }
         });
 
-        const stream = response.body?.pipeThrough(transformStream);
+        const stream = streamResponse.pipeThrough(transformStream);
 
         return new Response(stream, {
             headers: {

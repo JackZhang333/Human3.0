@@ -22,6 +22,7 @@ import {
     AlertDialogCancel,
     AlertDialogAction,
 } from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
 
 interface ChatInterfaceProps {
     assessmentId?: string;
@@ -305,20 +306,17 @@ export default function ChatInterface({
         }
     };
 
+    const [showRegenConfirm, setShowRegenConfirm] = useState(false);
+
     const handleRegenerate = async () => {
         if (isLoading) return;
 
-        // Block regeneration if we already have a valid report result to prevent accidents
-        // unless the user explicitly cleared it (which we don't support yet, but good safety)
-        if (reportResult) {
-            const confirmRegen = window.confirm(
-                language === 'zh'
-                    ? '已有生成好的报告。确定要重新生成吗？这将覆盖现有结果。'
-                    : 'Report already exists. Are you sure you want to regenerate? This will overwrite the current result.'
-            );
-            if (!confirmRegen) return;
+        if (reportResult && !showRegenConfirm) {
+            setShowRegenConfirm(true);
+            return;
         }
 
+        setShowRegenConfirm(false);
         const regeneratePrompt = language === 'zh'
             ? "请基于我们之前的全部对话，重新深度分析并生成我的 Human 3.0 评估报告。请确保包含完整的 [ASSESSMENT_COMPLETE] 标记和 JSON 结果。"
             : "Please re-analyze our entire conversation and regenerate my Human 3.0 assessment report. Ensure to include the full [ASSESSMENT_COMPLETE] marker and JSON result.";
@@ -338,24 +336,50 @@ export default function ChatInterface({
                 {/* 报告入口和重生成操作 */}
                 {completedQuadrants.length === 4 && !!reportResult && (
                     <div className="flex flex-wrap items-center justify-center gap-3 mt-6 animate-slide-up">
-                        <Link
-                            href={`/report/${assessmentId}`}
-                            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[var(--accent-primary)] to-[#FF4D4D] text-white rounded-full text-sm font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all active:scale-95"
-                        >
-                            <LayoutDashboard className="w-4 h-4" />
-                            {t('assess.viewReport')}
+                        <Link href={`/report/${assessmentId}`} passHref>
+                            <Button className="rounded-full px-8 gap-2 bg-gradient-to-r from-[var(--accent-primary)] to-red-500 hover:shadow-lg hover:shadow-red-500/20 transition-all font-bold">
+                                <LayoutDashboard className="w-4 h-4" />
+                                {t('assess.viewReport')}
+                            </Button>
                         </Link>
-                        <button
+                        <Button
+                            variant="outline"
                             onClick={handleRegenerate}
                             disabled={isLoading}
-                            className="flex items-center gap-2 px-5 py-2.5 bg-white/80 backdrop-blur-sm border border-[var(--border-subtle)] text-[var(--text-secondary)] rounded-full text-sm font-bold shadow-sm hover:bg-white hover:text-[var(--accent-primary)] transition-all active:scale-95 disabled:opacity-50"
+                            className="rounded-full px-8 gap-2 bg-white/50 backdrop-blur-sm font-bold"
                         >
                             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
                             {t('assess.regenerateReport')}
-                        </button>
+                        </Button>
                     </div>
                 )}
             </div>
+
+            {/* Assessment Regeneration Confirmation */}
+            <AlertDialog open={showRegenConfirm} onOpenChange={setShowRegenConfirm}>
+                <AlertDialogContent className="rounded-3xl max-w-md">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="text-2xl">
+                            {language === 'zh' ? '确定重新生成？' : 'Confirm Regeneration?'}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-base pt-2">
+                            {language === 'zh'
+                                ? '已有生成好的报告。确定要重新生成吗？这将覆盖现有结果。'
+                                : 'Report already exists. Are you sure you want to regenerate? This will overwrite the current result.'}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="mt-8">
+                        <AlertDialogCancel className="rounded-2xl border-none bg-[var(--bg-subtle)]">
+                            {t('common.cancel')}
+                        </AlertDialogCancel>
+                        <AlertDialogAction onClick={handleRegenerate} asChild>
+                            <Button className="rounded-2xl min-w-24">
+                                {t('common.confirm')}
+                            </Button>
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             {/* 消息列表 - 可滚动区域 */}
             <div className="flex-1 overflow-y-auto min-h-0 px-6 py-8 space-y-8 scroll-smooth scrollbar-thin scrollbar-thumb-black/5 scrollbar-track-transparent">

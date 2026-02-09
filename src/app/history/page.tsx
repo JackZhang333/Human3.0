@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useLanguage } from '@/contexts/LanguageContext';
 import PageHeader from '@/components/PageHeader';
 import HistoryList from '@/components/history/HistoryList';
+import { Button } from '@/components/ui/button';
 
 export const dynamic = 'force-dynamic';
 
@@ -73,15 +74,17 @@ export default function HistoryPage() {
             <PageHeader
                 title={t('history.title')}
                 actions={
-                    <Link href="/assess" className="btn-primary text-sm py-2 px-4">
-                        {t('nav.startAssessment')}
+                    <Link href="/assess" passHref>
+                        <Button size="sm" className="rounded-full shadow-lg">
+                            {t('nav.startAssessment')}
+                        </Button>
                     </Link>
                 }
             />
 
             {/* 内容 */}
-            <main className="relative z-10 max-w-4xl mx-auto px-4 py-8 flex-1">
-                <h1 className="text-2xl font-bold mb-6">{t('history.title')}</h1>
+            <main className="relative z-10 w-full max-w-4xl mx-auto px-4 py-8 flex-1 overflow-x-hidden">
+                <h1 className="text-2xl font-bold mb-6 truncate">{t('history.title')}</h1>
 
                 <HistoryList initialAssessments={assessments || []} />
             </main>

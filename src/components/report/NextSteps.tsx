@@ -2,7 +2,7 @@
 
 import { AssessmentResult } from '@/lib/types';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { ArrowRightCircle, Lightbulb } from 'lucide-react';
+import { ArrowRight, Lightbulb } from 'lucide-react';
 
 interface NextStepsProps {
     result: Partial<AssessmentResult>;
@@ -13,49 +13,80 @@ export default function NextSteps({ result }: NextStepsProps) {
 
     return (
         <>
-            {/* 立即行动 */}
-            <section
-                className="card mb-8 border-2 !border-[var(--success)] relative overflow-hidden"
-            >
-                <div className="absolute top-0 right-0 p-24 bg-[var(--success)] opacity-5 rounded-full blur-2xl transform translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
-
-                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 relative z-10">
-                    <span
-                        className="w-8 h-8 rounded-lg flex items-center justify-center bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
+            {/* Immediate Next Action */}
+            {result.immediateNextAction && (
+                <section className="mb-12">
+                    <div
+                        className="card relative overflow-hidden lg:p-12"
+                        style={{ borderLeft: '4px solid var(--success)' }}
                     >
-                        <ArrowRightCircle className="w-5 h-5" />
-                    </span>
-                    {language === 'zh' ? '你的下一步行动' : 'Your Immediate Next Step'}
-                </h2>
-                <p className="text-xl font-medium text-[var(--text-primary)] leading-relaxed relative z-10">
-                    {result.immediateNextAction}
-                </p>
-            </section>
+                        {/* Background decoration */}
+                        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[var(--success)] opacity-[0.03] rounded-full blur-3xl transform translate-x-1/3 -translate-y-1/3 pointer-events-none" />
 
-            {/* 真相 */}
-            <section className="card bg-[var(--bg-subtle)] border-none">
-                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                    <span
-                        className="w-8 h-8 rounded-lg flex items-center justify-center bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
-                    >
-                        <Lightbulb className="w-5 h-5" />
-                    </span>
-                    {language === 'zh' ? '关于你的真相' : 'The Truth About Your Situation'}
-                </h2>
-                <p className="text-[var(--text-secondary)] leading-relaxed whitespace-pre-line italic">
-                    &ldquo;{result.truthAboutSituation}&rdquo;
-                </p>
-            </section>
+                        <div className="relative z-10">
+                            {/* Section Header */}
+                            <div className="flex items-center gap-3 mb-10">
+                                <div className="w-10 h-10 rounded-xl bg-[var(--success)]/10 flex items-center justify-center">
+                                    <ArrowRight className="w-5 h-5 text-[var(--success)]" />
+                                </div>
+                                <div>
+                                    <p className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-[0.15em]">
+                                        {language === 'zh' ? '立即行动' : 'Take Action'}
+                                    </p>
+                                    <h2 className="text-xl font-semibold text-[var(--text-primary)]">
+                                        {language === 'zh' ? '你的下一步行动' : 'Your Immediate Next Step'}
+                                    </h2>
+                                </div>
+                            </div>
 
-            {/* 类似元类型 */}
+                            {/* Content */}
+                            <p className="text-xl sm:text-2xl lg:text-3xl font-medium text-[var(--text-primary)] leading-relaxed lg:max-w-4xl">
+                                {result.immediateNextAction}
+                            </p>
+                        </div>
+                    </div>
+                </section>
+            )}
+
+            {/* Truth About Situation */}
+            {result.truthAboutSituation && (
+                <section className="mb-12">
+                    <div className="card bg-gradient-to-br from-[var(--bg-subtle)] to-[var(--bg-primary)] border-[var(--border-subtle)] lg:p-12">
+                        {/* Section Header */}
+                        <div className="flex items-center gap-3 mb-8">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--quadrant-spirit)]/20 to-[var(--quadrant-spirit)]/5 flex items-center justify-center">
+                                <Lightbulb className="w-5 h-5 text-[var(--quadrant-spirit)]" />
+                            </div>
+                            <div>
+                                <p className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-[0.15em]">
+                                    {language === 'zh' ? '深刻洞察' : 'Deep Insight'}
+                                </p>
+                                <h2 className="text-xl font-semibold text-[var(--text-primary)]">
+                                    {language === 'zh' ? '关于你的真相' : 'The Truth About Your Situation'}
+                                </h2>
+                            </div>
+                        </div>
+
+                        {/* Content */}
+                        <blockquote className="text-lg lg:text-xl text-[var(--text-secondary)] leading-relaxed whitespace-pre-line italic lg:max-w-4xl">
+                            "{result.truthAboutSituation}"
+                        </blockquote>
+                    </div>
+                </section>
+            )}
+
+            {/* Comparable Metatypes */}
             {result.comparableMetatypes && result.comparableMetatypes.length > 0 && (
-                <section className="mt-12 text-center">
-                    <p className="text-xs text-[var(--text-tertiary)] uppercase tracking-wider mb-2">
+                <section className="text-center py-8">
+                    <p className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-[0.2em] mb-4">
                         {language === 'zh' ? '相似元类型' : 'Comparable Metatypes'}
                     </p>
                     <div className="flex flex-wrap justify-center gap-2">
                         {result.comparableMetatypes.map((meta, i) => (
-                            <span key={i} className="text-sm text-[var(--text-secondary)] px-3 py-1 rounded-full bg-[var(--bg-subtle)]">
+                            <span
+                                key={i}
+                                className="text-sm text-[var(--text-secondary)] px-4 py-2 rounded-full bg-[var(--bg-subtle)] border border-[var(--border-subtle)] hover:border-[var(--border-primary)] transition-colors"
+                            >
                                 {meta}
                             </span>
                         ))}
