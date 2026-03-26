@@ -4,8 +4,12 @@ import SchemaMarkup from "@/components/SchemaMarkup";
 import { Providers } from "@/components/Providers";
 
 export const metadata: Metadata = {
-  title: "Human 3.0 Assessment | Become Multidimensionally Jacked Across 4 Quadrants",
-  description: "Are you living a Level 1.0 script or Level 3.0 reality? Map your Mind, Body, Spirit, and Vocation. Stop forcing balance and start systematic lifestyle integration.",
+  metadataBase: new URL('https://human3.org'),
+  title: "Human 3.0 Assessment | Multidimensional Development",
+  description: "Map your Mind, Body, Spirit, and Vocation. Stop forcing balance and start systematic lifestyle integration with the Human 3.0 framework.",
+  alternates: {
+    canonical: 'https://human3.org',
+  },
   keywords: [
     "Human 3.0",
     "Human 3.0 Assessment",
@@ -22,7 +26,7 @@ export const metadata: Metadata = {
     "Integrated Development"
   ],
   openGraph: {
-    title: "Human 3.0 Assessment | Discover Your Metatype",
+    title: "Human 3.0 Assessment | Multidimensional Development",
     description: "Map your development across Mind, Body, Spirit, and Vocation. Become multidimensionally jacked through systematic lifestyle integration.",
     type: "website",
     locale: "zh_CN",
@@ -31,7 +35,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Human 3.0 Assessment | Find Your Metatype",
+    title: "Human 3.0 Assessment | Multidimensional Development",
     description: "Stop forcing balance. Start systematic integration across all 4 quadrants of life.",
   },
   robots: {
@@ -44,9 +48,6 @@ export const metadata: Metadata = {
       'max-image-preview': 'large',
       'max-snippet': -1,
     },
-  },
-  verification: {
-    google: 'google-site-verification-code',
   },
 };
 
