@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import SchemaMarkup from "@/components/SchemaMarkup";
 import { Providers } from "@/components/Providers";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://human3.org'),
@@ -59,6 +60,7 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" suppressHydrationWarning>
       <body className="antialiased">
+        <GoogleAnalytics />
         <SchemaMarkup />
         <Providers>
           {children}
