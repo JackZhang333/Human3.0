@@ -8,7 +8,7 @@ export class DeepSeekProvider extends BaseAIProvider {
 
     protected prepareRequestBody(messages: Message[], options?: AIProviderOptions) {
         return {
-            model: options?.model || 'deepseek-chat',
+            model: options?.model || 'deepseek-v4-flash',
             messages,
             stream: options?.stream ?? true,
             max_tokens: options?.maxTokens || 4096,
